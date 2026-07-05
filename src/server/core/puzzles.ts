@@ -1,5 +1,13 @@
-import { redis } from '@devvit/web/server';
+import { context, redis } from '@devvit/web/server';
 import type { ZoneHint, Piece } from '../../shared/api';
+
+// devvit.json's `dev.subreddit` — the only subreddit `devvit playtest` runs
+// against, so this never matches in production.
+const PLAYTEST_SUBREDDIT = 'bigpicture_game_dev';
+
+export function isPlaytest(): boolean {
+  return context.subredditName === PLAYTEST_SUBREDDIT;
+}
 
 export type PuzzleDefinition = {
   date: string;
@@ -46,6 +54,9 @@ export const K = {
   lb: (d: string) => `tbp:${d}:lb`,
   complete: (d: string) => `tbp:${d}:complete`,
   streak: (u: string) => `tbp:streak:${u}`,
+  // Set to '1' the first time a user places with hints visible; gates the
+  // no-hints 2x scoring bonus for the rest of the day.
+  usedHints: (d: string, u: string) => `tbp:${d}:usedhints:${u}`,
 };
 
 export function getZone(cellIndex: number, gridSize: number): ZoneHint {

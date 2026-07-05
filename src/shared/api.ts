@@ -29,6 +29,17 @@ export type GameStateResponse = {
   leaderboard: LeaderboardEntry[];
   completed: boolean;
   username: string;
+  /** True once any placement today was made with hints on — kills the 2x bonus for the day. */
+  usedHints: boolean;
+  /** True only on the dev playtest subreddit; enables dev-only UI like the day reset. */
+  playtest: boolean;
+};
+
+export type PlaceRequest = {
+  pieceId: number;
+  cellIndex: number;
+  /** Whether zone hints were visible when this placement was made. */
+  hintsOn: boolean;
 };
 
 export type PlaceResponse = {
@@ -41,6 +52,9 @@ export type PlaceResponse = {
   hand: Piece[];
   canvas: Record<string, true>;
   completed: boolean;
+  /** Points awarded for this placement: 0 wrong, 1 correct, 2 correct in a no-hints day. */
+  pointsEarned: number;
+  usedHints: boolean;
 };
 
 export type RealtimeCanvasMessage = {

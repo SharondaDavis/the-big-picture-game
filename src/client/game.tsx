@@ -1,5 +1,6 @@
 import './index.css';
 import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { connectRealtime, context } from '@devvit/web/client';
 import type {
@@ -14,6 +15,13 @@ const ZONE_LABEL: Record<ZoneHint, string> = {
   TR: 'Top-Right',
   BL: 'Bottom-Left',
   BR: 'Bottom-Right',
+};
+
+const ZONE_ARROW: Record<ZoneHint, string> = {
+  TL: '↖',
+  TR: '↗',
+  BL: '↙',
+  BR: '↘',
 };
 
 function pieceStyle(
@@ -36,18 +44,40 @@ function pieceStyle(
   };
 }
 
+// Resolves the grid cell under a screen point during a drag, via the
+// data-cell-index attribute each cell carries. Pointer events (not native
+// HTML5 drag-and-drop) so this works reliably on touch webviews.
+function cellIndexAtPoint(x: number, y: number): number | null {
+  const el = document.elementFromPoint(x, y);
+  const cellEl = el instanceof Element ? el.closest<HTMLElement>('[data-cell-index]') : null;
+  if (!cellEl) return null;
+  const idx = Number(cellEl.dataset.cellIndex);
+  return Number.isNaN(idx) ? null : idx;
+}
+
 type FlashState = { cell: number; kind: 'correct' | 'wrong' | 'taken' } | null;
 type NotifState = { text: string; kind: 'success' | 'error' | 'info' } | null;
+type DragPos = { x: number; y: number };
+type PendingPlacement = { cell: number; pieceId: number } | null;
 
 const App = () => {
   const [state, setState] = useState<GameStateResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [placing, setPlacing] = useState(false);
   const [flash, setFlash] = useState<FlashState>(null);
   const [notif, setNotif] = useState<NotifState>(null);
   const [showLb, setShowLb] = useState(false);
+  const [dragPieceId, setDragPieceId] = useState<number | null>(null);
+  const [dragPos, setDragPos] = useState<DragPos | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<number | null>(null);
+  const [returning, setReturning] = useState(false);
+  const [pending, setPending] = useState<PendingPlacement>(null);
+  const [returnedPieceId, setReturnedPieceId] = useState<number | null>(null);
+  const [hintsOn, setHintsOn] = useState(true);
   const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragOriginRef = useRef<DragPos | null>(null);
+  const returnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const returnedPieceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const notify = (text: string, kind: 'success' | 'error' | 'info') => {
     if (notifTimer.current) clearTimeout(notifTimer.current);
@@ -63,6 +93,13 @@ const App = () => {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (returnTimerRef.current) clearTimeout(returnTimerRef.current);
+      if (returnedPieceTimerRef.current) clearTimeout(returnedPieceTimerRef.current);
+    };
   }, []);
 
   // Real-time canvas updates from other players
@@ -88,32 +125,43 @@ const App = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.puzzle.date]);
 
-  const handleCellTap = useCallback(
-    async (cellIndex: number) => {
-      if (selectedId === null || placing || !state || state.locked) return;
+  const commitPlacement = useCallback(
+    async (pieceId: number, cellIndex: number) => {
+      if (placing || !state || state.locked) return;
       if (state.canvas[String(cellIndex)]) {
         notify("Someone's already there!", 'info');
         return;
       }
       setPlacing(true);
+      // Show the piece sitting in the cell immediately so the drop feels
+      // committed while the server validates it.
+      setPending({ cell: cellIndex, pieceId });
       try {
         const res = await fetch('/api/place', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pieceId: selectedId, cellIndex }),
+          body: JSON.stringify({ pieceId, cellIndex, hintsOn }),
         });
         const data: PlaceResponse = await res.json();
-        setSelectedId(null);
 
         const flashKind = data.correct ? 'correct' : data.alreadyFilled ? 'taken' : 'wrong';
         setFlash({ cell: cellIndex, kind: flashKind });
         setTimeout(() => setFlash(null), 700);
 
         if (data.correct) {
-          notify('✓ Correct! Keep going.', 'success');
+          notify(
+            data.pointsEarned >= 2
+              ? '✓ It sticks! +2 pts — no-hints bonus!'
+              : '✓ It sticks! +1 pt. Keep going.',
+            'success'
+          );
         } else if (data.alreadyFilled) {
           notify('Someone got there first!', 'info');
         } else {
+          // Pulse the piece back in the tray so it's obvious it returned.
+          setReturnedPieceId(pieceId);
+          if (returnedPieceTimerRef.current) clearTimeout(returnedPieceTimerRef.current);
+          returnedPieceTimerRef.current = setTimeout(() => setReturnedPieceId(null), 1200);
           const t = data.triesLeft;
           notify(
             t === 0
@@ -133,14 +181,92 @@ const App = () => {
             score: data.score,
             locked: data.triesLeft <= 0,
             completed: data.completed,
+            usedHints: data.usedHints,
           };
         });
       } finally {
+        setPending(null);
         setPlacing(false);
       }
     },
-    [selectedId, placing, state]
+    [placing, state, hintsOn]
   );
+
+  // Animates the dragged piece back to its tray slot instead of just
+  // vanishing, so a miss reads as "dropped outside," not a glitch.
+  const snapBack = useCallback(() => {
+    setDragOverCell(null);
+    setReturning(true);
+    const origin = dragOriginRef.current;
+    if (origin) setDragPos(origin);
+    returnTimerRef.current = setTimeout(() => {
+      setDragPieceId(null);
+      setDragPos(null);
+      setReturning(false);
+    }, 200);
+  }, []);
+
+  const handlePieceDragStart = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>, pieceId: number) => {
+      if (placing || !state || state.locked) return;
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const rect = e.currentTarget.getBoundingClientRect();
+      dragOriginRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      setReturning(false);
+      setDragPieceId(pieceId);
+      setDragPos({ x: e.clientX, y: e.clientY });
+    },
+    [placing, state]
+  );
+
+  const handlePieceDragMove = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      if (dragPieceId === null) return;
+      setDragPos({ x: e.clientX, y: e.clientY });
+      setDragOverCell(cellIndexAtPoint(e.clientX, e.clientY));
+    },
+    [dragPieceId]
+  );
+
+  const handlePieceDragEnd = useCallback(
+    (e: ReactPointerEvent<HTMLButtonElement>) => {
+      if (dragPieceId === null) return;
+      const pieceId = dragPieceId;
+      const cellIndex = cellIndexAtPoint(e.clientX, e.clientY);
+      const validDrop =
+        cellIndex !== null && !!state && !state.canvas[String(cellIndex)] && !state.locked;
+
+      if (validDrop && cellIndex !== null) {
+        setDragOverCell(null);
+        setDragPieceId(null);
+        setDragPos(null);
+        void commitPlacement(pieceId, cellIndex);
+      } else {
+        snapBack();
+      }
+    },
+    [dragPieceId, state, commitPlacement, snapBack]
+  );
+
+  const handlePieceDragCancel = useCallback(() => {
+    if (dragPieceId === null) return;
+    snapBack();
+  }, [dragPieceId, snapBack]);
+
+  // Dev-only (playtest subreddit): wipe and re-seed today's puzzle state.
+  const resetDay = useCallback(async () => {
+    if (placing) return;
+    setPending(null);
+    setDragPieceId(null);
+    setDragPos(null);
+    setFlash(null);
+    await fetch('/api/debug/reset-day', { method: 'POST' });
+    const res = await fetch('/api/game-state');
+    const data: GameStateResponse = await res.json();
+    setState(data);
+    notify('Day reset — fresh hand dealt (dev)', 'info');
+  }, [placing]);
 
   if (loading) {
     return (
@@ -158,12 +284,15 @@ const App = () => {
     );
   }
 
-  const { puzzle, canvas, hand, triesLeft, score, streak, locked, completed, leaderboard } = state;
+  const { puzzle, canvas, hand, triesLeft, score, streak, locked, completed, leaderboard, usedHints } =
+    state;
+  // 2x scoring is live while hints are off and no hinted placement was made today.
+  const bonusLive = !hintsOn && !usedHints;
   const { gridSize, imageUrl, title } = puzzle;
   const totalCells = gridSize * gridSize;
   const filledCount = Object.keys(canvas).length;
   const pct = Math.round((filledCount / totalCells) * 100);
-  const selectedPiece = hand.find((p) => p.id === selectedId) ?? null;
+  const draggedPiece = dragPieceId !== null ? (hand.find((p) => p.id === dragPieceId) ?? null) : null;
 
   // Responsive cell size: ~(vw - padding) / gridSize, clamped
   const CELL_SIZE = Math.min(Math.floor((180 - 8) / gridSize), 52);
@@ -187,11 +316,31 @@ const App = () => {
             {triesLeft >= 3 ? '❤️❤️❤️' : triesLeft === 2 ? '❤️❤️🖤' : triesLeft === 1 ? '❤️🖤🖤' : '🖤🖤🖤'}
           </span>
           <button
+            onClick={() => setHintsOn((v) => !v)}
+            className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${
+              hintsOn
+                ? 'border-orange-400/60 text-orange-300 bg-orange-400/10'
+                : 'border-white/20 text-white/40'
+            }`}
+            title="Zone hints show which corner of the picture each piece belongs in. Play all day without them for double points."
+          >
+            💡 {hintsOn ? 'Hints on' : bonusLive ? 'Hints off · 2×' : 'Hints off'}
+          </button>
+          <button
             onClick={() => setShowLb((v) => !v)}
             className="text-white/50 hover:text-white text-xs transition-colors"
           >
             🏆
           </button>
+          {state.playtest && (
+            <button
+              onClick={() => void resetDay()}
+              className="text-[10px] px-1.5 py-0.5 rounded-full border border-white/20 text-white/40 hover:text-white/80 transition-colors"
+              title="Dev only: reset today's puzzle and deal a fresh hand"
+            >
+              ↺ dev
+            </button>
+          )}
         </div>
       </header>
 
@@ -249,21 +398,48 @@ const App = () => {
             style={{
               gridTemplateColumns: `repeat(${gridSize}, ${CELL_SIZE}px)`,
               gridTemplateRows: `repeat(${gridSize}, ${CELL_SIZE}px)`,
-              gap: 1,
-              background: 'rgba(255,255,255,0.05)',
+              gap: 2,
+              background: 'rgba(0,0,0,0.35)',
             }}
           >
             {Array.from({ length: totalCells }, (_, i) => {
               const filled = !!canvas[String(i)];
               const isFlashing = flash?.cell === i;
-              const canTap = !filled && selectedId !== null && !locked;
+              const isDragTarget = !filled && !locked && dragPieceId !== null && dragOverCell === i;
+
+              // Double-tone inset ring so the grid line reads against both
+              // light and dark regions of the target image.
+              const CELL_EDGE = 'inset 0 0 0 1.5px rgba(255,255,255,0.5), inset 0 0 0 3px rgba(0,0,0,0.4)';
+              const CELL_EDGE_ACTIVE =
+                'inset 0 0 0 2px rgba(253,186,116,0.95), inset 0 0 0 4px rgba(154,52,18,0.55), 0 0 10px rgba(251,146,60,0.65)';
 
               if (filled) {
                 return (
                   <div
                     key={i}
-                    className={`transition-all duration-300 ${isFlashing && flash?.kind === 'correct' ? 'brightness-150' : ''}`}
-                    style={pieceStyle(i, gridSize, imageUrl, CELL_SIZE)}
+                    data-cell-index={i}
+                    className={isFlashing && flash?.kind === 'correct' ? 'piece-lock' : ''}
+                    style={{
+                      ...pieceStyle(i, gridSize, imageUrl, CELL_SIZE),
+                      boxShadow: CELL_EDGE,
+                    }}
+                  />
+                );
+              }
+
+              // The just-dropped piece sits in the cell while the server
+              // decides whether it sticks.
+              if (pending?.cell === i) {
+                return (
+                  <div
+                    key={i}
+                    data-cell-index={i}
+                    className="animate-pulse"
+                    style={{
+                      ...pieceStyle(pending.pieceId, gridSize, imageUrl, CELL_SIZE),
+                      boxShadow: CELL_EDGE_ACTIVE,
+                      opacity: 0.9,
+                    }}
                   />
                 );
               }
@@ -271,17 +447,24 @@ const App = () => {
               return (
                 <div
                   key={i}
-                  onClick={() => handleCellTap(i)}
-                  className={`transition-all duration-150 ${
+                  data-cell-index={i}
+                  className={`transition-all duration-150 relative ${
                     isFlashing
                       ? flash?.kind === 'wrong'
-                        ? 'bg-red-500/50'
+                        ? 'bg-red-500/50 cell-shake'
                         : 'bg-gray-400/40'
-                      : canTap
-                        ? 'bg-orange-400/10 hover:bg-orange-400/25 cursor-pointer ring-1 ring-orange-400/40'
-                        : 'bg-white/5'
+                      : isDragTarget
+                        ? 'bg-orange-400/50'
+                        : dragPieceId !== null && !locked
+                          ? 'bg-orange-400/10'
+                          : 'bg-white/5'
                   }`}
-                  style={{ width: CELL_SIZE, height: CELL_SIZE }}
+                  style={{
+                    width: CELL_SIZE,
+                    height: CELL_SIZE,
+                    boxShadow: isDragTarget ? CELL_EDGE_ACTIVE : CELL_EDGE,
+                    zIndex: isDragTarget ? 5 : 1,
+                  }}
                 />
               );
             })}
@@ -306,29 +489,38 @@ const App = () => {
       {/* Hand */}
       <div className="px-3 pt-4">
         <div className="text-xs text-white/40 uppercase tracking-widest mb-2">
-          Your pieces {locked ? '(locked)' : `— tap to select`}
+          Your pieces {locked ? '(locked)' : '— drag onto the canvas'}
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {hand.length === 0 && !locked && (
             <span className="text-white/30 text-sm">Canvas is full — great work!</span>
           )}
           {hand.map((piece) => {
-            const isSelected = piece.id === selectedId;
+            const isDragging = piece.id === dragPieceId;
+            const isPending = piece.id === pending?.pieceId;
+            const justReturned = piece.id === returnedPieceId;
             return (
               <button
                 key={piece.id}
                 disabled={locked}
-                onClick={() => setSelectedId((prev) => (prev === piece.id ? null : piece.id))}
-                className={`relative rounded-lg border-2 transition-all duration-150 overflow-hidden ${
-                  isSelected
-                    ? 'border-orange-400 ring-2 ring-orange-400/50 scale-105'
-                    : 'border-white/20 hover:border-white/50 active:scale-95'
-                } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                onPointerDown={(e) => handlePieceDragStart(e, piece.id)}
+                onPointerMove={handlePieceDragMove}
+                onPointerUp={handlePieceDragEnd}
+                onPointerCancel={handlePieceDragCancel}
+                className={`relative rounded-lg border-2 transition-all duration-150 overflow-hidden touch-none ${
+                  isDragging || isPending
+                    ? 'border-orange-400/40 opacity-30'
+                    : justReturned
+                      ? 'border-red-400 piece-returned'
+                      : 'border-white/20 hover:border-white/50 active:scale-95'
+                } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}
                 style={pieceStyle(piece.id, gridSize, imageUrl, 68)}
               >
-                <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-black/70 text-white/90 px-1 rounded leading-tight">
-                  {piece.zone}
-                </span>
+                {hintsOn && (
+                  <span className="absolute bottom-0.5 right-0.5 text-[11px] bg-black/70 text-orange-300 px-1 rounded leading-tight font-bold">
+                    {ZONE_ARROW[piece.zone]}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -337,16 +529,27 @@ const App = () => {
 
       {/* Zone hint / instruction */}
       <div className="px-3 pt-3 pb-4 min-h-[36px]">
-        {selectedPiece ? (
+        {draggedPiece ? (
           <div className="flex items-center gap-2 text-sm">
-            <span className="bg-orange-400/20 text-orange-300 px-2 py-0.5 rounded text-xs font-semibold">
-              ZONE: {ZONE_LABEL[selectedPiece.zone]}
+            {hintsOn && (
+              <span className="bg-orange-400/20 text-orange-300 px-2 py-0.5 rounded text-xs font-semibold">
+                {ZONE_ARROW[draggedPiece.zone]} {ZONE_LABEL[draggedPiece.zone]}
+              </span>
+            )}
+            <span className="text-white/50">
+              {hintsOn ? '→ drop it in that corner of the canvas' : 'Drop it where it belongs'}
             </span>
-            <span className="text-white/50">→ tap a cell on the canvas</span>
           </div>
         ) : locked ? null : (
           <p className="text-white/30 text-xs">
-            Compare pieces to the target image, then tap a piece and tap where it belongs.
+            Compare pieces to the target image, then drag a piece onto the cell where it belongs.
+            {hintsOn && ' The arrow on each piece points to its corner of the picture.'}
+            {bonusLive && (
+              <span className="text-orange-300/80">
+                {' '}
+                Hard mode: correct pieces are worth 2 points.
+              </span>
+            )}
           </p>
         )}
       </div>
@@ -387,11 +590,32 @@ const App = () => {
                   )}
                 </span>
                 <span className="text-sm font-mono">
-                  {entry.score} {entry.score === 1 ? 'piece' : 'pieces'}
+                  {entry.score} {entry.score === 1 ? 'pt' : 'pts'}
                 </span>
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Drag ghost: the piece lifted off the tray, following the pointer */}
+      {dragPieceId !== null && dragPos && (
+        <div
+          className={`fixed rounded-lg border-2 border-orange-400 overflow-hidden pointer-events-none z-50 shadow-[0_10px_28px_rgba(0,0,0,0.65)] ${
+            returning ? 'transition-all duration-200 ease-out' : ''
+          }`}
+          style={{
+            ...pieceStyle(dragPieceId, gridSize, imageUrl, 68),
+            left: dragPos.x,
+            top: dragPos.y,
+            transform: `translate(-50%, -50%) scale(${returning ? 1 : 1.15})`,
+          }}
+        >
+          {draggedPiece && hintsOn && (
+            <span className="absolute bottom-0.5 right-0.5 text-[11px] bg-black/70 text-orange-300 px-1 rounded leading-tight font-bold">
+              {ZONE_ARROW[draggedPiece.zone]}
+            </span>
+          )}
         </div>
       )}
     </div>

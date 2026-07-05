@@ -14,14 +14,13 @@ Placements aren't private — every correct piece locks into a canvas that **eve
 
 ## How to play
 
-1. Look at the full target image shown at the top of the post.
-2. Tap one of your five pieces to select it.
-3. Tap the grid cell where you think that piece belongs.
-4. **Correct** → the piece locks into the shared canvas for everyone, and you're dealt a new piece. Keep going.
-5. **Wrong** → you burn one of your three tries for the day.
-6. Run out of tries and you're done until the next daily puzzle. Your score is the number of pieces you placed correctly; the community's goal is to fill the whole canvas before the day ends.
+1. Look at the full target image shown next to the canvas.
+2. Drag one of your five pieces onto the grid cell where you think it belongs. The cell under your finger highlights before you let go.
+3. **Correct** → the piece locks into the shared canvas for everyone (it sticks!), and you're dealt a new piece. Keep going.
+4. **Wrong** → the piece bounces back to your tray and you burn one of your three tries for the day.
+5. Run out of tries and you're done until the next daily puzzle. The community's goal is to fill the whole canvas before the day ends.
 
-Each piece carries a rough zone hint (e.g. top-left) so you're reasoning about a region of the image, not guessing blind across the whole grid.
+**Hints and scoring:** each piece carries a zone hint — a corner arrow (↖ ↗ ↙ ↘) showing which quadrant of the image it belongs in. Hints can be toggled off for a harder game: correct placements are worth **1 point with hints, 2 points if you play the whole day without them**. Making any placement with hints visible forfeits the bonus for the rest of that day.
 
 ## Play it
 
