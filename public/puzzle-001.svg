@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#04040f"/>
+      <stop offset="65%" stop-color="#0a0a2e"/>
+      <stop offset="100%" stop-color="#1a1040"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d2b0d"/>
+      <stop offset="100%" stop-color="#071507"/>
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff8a0" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#fff8a0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fire" cx="50%" cy="10%" r="90%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#ffe066"/>
+      <stop offset="60%" stop-color="#ff6a00"/>
+      <stop offset="100%" stop-color="#cc1100" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="launchLight" cx="50%" cy="100%" r="50%">
+      <stop offset="0%" stop-color="#ff8800" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ff8800" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky background -->
+  <rect width="400" height="400" fill="url(#sky)"/>
+
+  <!-- Stars — distributed across sky cells for recognizability -->
+  <!-- TL quadrant (cells 0,1,4,5) -->
+  <circle cx="18" cy="22" r="1.8" fill="white" opacity="0.95"/>
+  <circle cx="55" cy="12" r="1.2" fill="white" opacity="0.7"/>
+  <circle cx="88" cy="38" r="2.2" fill="#aaddff" opacity="0.9"/>
+  <circle cx="32" cy="65" r="1.4" fill="white" opacity="0.8"/>
+  <circle cx="70" cy="55" r="1" fill="white" opacity="0.6"/>
+  <circle cx="12" cy="90" r="1.6" fill="white" opacity="0.75"/>
+  <circle cx="95" cy="78" r="1.2" fill="white" opacity="0.65"/>
+  <circle cx="48" cy="110" r="1.8" fill="#fffbd0" opacity="0.85"/>
+  <circle cx="25" cy="135" r="1" fill="white" opacity="0.5"/>
+  <circle cx="82" cy="128" r="1.4" fill="white" opacity="0.7"/>
+
+  <!-- TR quadrant (cells 2,3,6,7) — moon lives here -->
+  <circle cx="230" cy="18" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="270" cy="8" r="1.2" fill="white" opacity="0.6"/>
+  <circle cx="390" cy="25" r="2" fill="#aaddff" opacity="0.9"/>
+  <circle cx="350" cy="55" r="1.4" fill="white" opacity="0.7"/>
+  <circle cx="385" cy="90" r="1" fill="white" opacity="0.55"/>
+  <circle cx="240" cy="135" r="1.6" fill="white" opacity="0.65"/>
+
+  <!-- Moon — upper right (cells 3,7) -->
+  <circle cx="338" cy="72" r="56" fill="url(#moonGlow)"/>
+  <circle cx="338" cy="72" r="42" fill="#f5e040"/>
+  <circle cx="338" cy="72" r="38" fill="#edd83c"/>
+  <!-- Moon craters -->
+  <circle cx="325" cy="60" r="7" fill="#d4bd28" opacity="0.8"/>
+  <circle cx="350" cy="82" r="5" fill="#d4bd28" opacity="0.65"/>
+  <circle cx="328" cy="88" r="4" fill="#d4bd28" opacity="0.55"/>
+  <circle cx="344" cy="58" r="3" fill="#c8b024" opacity="0.5"/>
+  <!-- Moon shadow (crescent) -->
+  <circle cx="352" cy="62" r="40" fill="#0a0a2e" opacity="0.42"/>
+
+  <!-- Mountains / horizon -->
+  <polygon points="0,308 45,262 95,290 155,248 210,272 265,244 320,262 380,245 400,255 400,328 0,328"
+    fill="#0b1e0b"/>
+  <polygon points="0,318 30,298 80,312 0,318" fill="#0d2b0d"/>
+
+  <!-- Ground -->
+  <rect x="0" y="322" width="400" height="78" fill="url(#ground)"/>
+
+  <!-- Launch pad platform -->
+  <rect x="152" y="282" width="96" height="42" fill="#2a2a4a" rx="3"/>
+  <rect x="152" y="282" width="96" height="8" fill="#3a3a60" rx="3"/>
+  <!-- Pad legs -->
+  <rect x="158" y="290" width="10" height="34" fill="#252545"/>
+  <rect x="232" y="290" width="10" height="34" fill="#252545"/>
+  <!-- Flame channel cutout -->
+  <rect x="188" y="298" width="24" height="26" fill="#0d0d1a" rx="2"/>
+
+  <!-- Launch light on ground -->
+  <ellipse cx="200" cy="324" rx="80" ry="16" fill="url(#launchLight)"/>
+
+  <!-- =========== ROCKET =========== -->
+  <!-- Fins -->
+  <polygon points="176,272 148,315 176,298" fill="#cc1a2a"/>
+  <polygon points="224,272 252,315 224,298" fill="#cc1a2a"/>
+  <!-- Secondary fins -->
+  <polygon points="176,198 162,220 176,210" fill="#cc1a2a" opacity="0.8"/>
+  <polygon points="224,198 238,220 224,210" fill="#cc1a2a" opacity="0.8"/>
+
+  <!-- Rocket body -->
+  <rect x="178" y="122" width="44" height="160" fill="#e8eaf0" rx="4"/>
+  <!-- Body shading -->
+  <rect x="178" y="122" width="10" height="160" fill="rgba(0,0,0,0.08)" rx="4"/>
+  <rect x="212" y="122" width="10" height="160" fill="rgba(255,255,255,0.12)" rx="4"/>
+
+  <!-- Body stripes / markings -->
+  <rect x="178" y="195" width="44" height="8" fill="#1a1aee"/>
+  <rect x="178" y="215" width="44" height="4" fill="#cc1a2a"/>
+  <rect x="178" y="245" width="44" height="8" fill="#1a1aee"/>
+  <rect x="178" y="255" width="44" height="4" fill="#cc1a2a"/>
+
+  <!-- Porthole / window -->
+  <circle cx="200" cy="172" r="14" fill="#1a3a6a"/>
+  <circle cx="200" cy="172" r="11" fill="#2255a4"/>
+  <circle cx="200" cy="172" r="9" fill="#3377dd"/>
+  <circle cx="196" cy="168" r="3.5" fill="rgba(255,255,255,0.45)"/>
+
+  <!-- Nose cone -->
+  <polygon points="178,122 200,52 222,122" fill="#dd1a2a" rx="3"/>
+  <!-- Nose tip highlight -->
+  <polygon points="195,72 200,52 205,72" fill="#ff3344" opacity="0.6"/>
+  <!-- Nose body blend -->
+  <rect x="178" y="112" width="44" height="12" fill="#e8eaf0" rx="2"/>
+
+  <!-- =========== EXHAUST FIRE =========== -->
+  <ellipse cx="200" cy="298" rx="22" ry="36" fill="url(#fire)"/>
+  <ellipse cx="200" cy="290" rx="12" ry="16" fill="#fffde0" opacity="0.95"/>
+  <ellipse cx="200" cy="286" rx="6" ry="8" fill="white" opacity="0.9"/>
+
+  <!-- Smoke clouds -->
+  <ellipse cx="155" cy="322" rx="42" ry="22" fill="#555566" opacity="0.65"/>
+  <ellipse cx="245" cy="322" rx="42" ry="22" fill="#555566" opacity="0.65"/>
+  <ellipse cx="200" cy="328" rx="55" ry="26" fill="#777788" opacity="0.4"/>
+  <ellipse cx="130" cy="332" rx="28" ry="14" fill="#444455" opacity="0.5"/>
+  <ellipse cx="268" cy="332" rx="28" ry="14" fill="#444455" opacity="0.5"/>
+
+  <!-- City lights on ground (bottom-left, cells 12) -->
+  <circle cx="32" cy="348" r="2.5" fill="#ff9900" opacity="0.8"/>
+  <circle cx="60" cy="355" r="2" fill="#ffbb44" opacity="0.7"/>
+  <circle cx="18" cy="362" r="1.5" fill="#ffcc66" opacity="0.6"/>
+  <circle cx="75" cy="345" r="1.8" fill="#ff8800" opacity="0.75"/>
+  <circle cx="45" cy="368" r="1.2" fill="#ffaa22" opacity="0.6"/>
+
+  <!-- City lights right side (cells 15) -->
+  <circle cx="368" cy="348" r="2.5" fill="#ff9900" opacity="0.8"/>
+  <circle cx="345" cy="360" r="2" fill="#ffcc44" opacity="0.7"/>
+  <circle cx="382" cy="368" r="1.5" fill="#ffbb66" opacity="0.65"/>
+  <circle cx="355" cy="342" r="1.8" fill="#ff8800" opacity="0.7"/>
+</svg>
