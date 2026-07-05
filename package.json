@@ -1,7 +1,13 @@
 {
   "private": true,
   "name": "bigpicture-game",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "The Big Picture — a daily communal jigsaw puzzle for Reddit, built on Devvit Web",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SharondaDavis/the-big-picture-game.git"
+  },
+  "author": "Sharonda Davis",
   "license": "BSD-3-Clause",
   "type": "module",
   "scripts": {

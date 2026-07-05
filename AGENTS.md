@@ -3,14 +3,15 @@ You are writing a Devvit web application that will be executed on Reddit.com.
 ## Tech Stack
 
 - **Frontend**: React 19, Tailwind CSS 4, Vite
-- **Backend**: Node.js v22 serverless environment (Devvit), Hono, TRPC
-- **Communication**: tRPC v11 for end-to-end type safety
+- **Backend**: Node.js v22 serverless environment (Devvit), Hono
+- **Communication**: plain JSON endpoints with request/response types shared via `/src/shared/api.ts`
 
 ## Layout & Architecture
 
 - `/src/server`: **Backend Code**. This runs in a secure, serverless environment.
-  - `trpc.ts`: Defines the API router and procedures.
   - `index.ts`: Main server entry point (Hono app).
+  - `routes/api.ts`: Game endpoints (game-state, place, canvas).
+  - `core/puzzles.ts`: Puzzle definitions, Redis keys, dealing/scoring logic.
   - Access `redis`, `reddit`, and `context` here via `@devvit/web/server`.
 - `/src/client`: **Frontend Code**. This is executed inside of an iFrame on reddit.com
   - To add an entrypoint, create a HTML file and add to the mapping inside of `devvit.json`
@@ -36,7 +37,6 @@ You are writing a Devvit web application that will be executed on Reddit.com.
 
 - `npm run type-check`: Check typescript types
 - `npm run lint`: Check the linter
-- `npm run test -- my-file-name`: Run tests isolated to a file
 
 ## Code Style
 

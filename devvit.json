@@ -20,23 +20,13 @@
   "menu": {
     "items": [
       {
-        "label": "Create a new post",
-        "description": "the-big-picture-game",
+        "label": "Create today's Big Picture post",
+        "description": "Posts the daily communal puzzle",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/post-create"
-      },
-      {
-        "label": "Example form",
-        "description": "Show a simple form",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/example-form"
       }
     ]
-  },
-  "forms": {
-    "exampleForm": "/internal/form/example-submit"
   },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"

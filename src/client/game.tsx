@@ -1,6 +1,6 @@
 import './index.css';
 import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { connectRealtime, context } from '@devvit/web/client';
 import type {
@@ -29,7 +29,7 @@ function pieceStyle(
   gridSize: number,
   imageUrl: string,
   size: number
-): React.CSSProperties {
+): CSSProperties {
   const row = Math.floor(pieceId / gridSize);
   const col = pieceId % gridSize;
   const bgSize = size * gridSize;
@@ -86,7 +86,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    fetch('/api/game-state')
+    void fetch('/api/game-state')
       .then((r) => r.json())
       .then((data: GameStateResponse) => {
         setState(data);
@@ -120,7 +120,7 @@ const App = () => {
       },
     });
     return () => {
-      conn.disconnect();
+      void conn.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.puzzle.date]);

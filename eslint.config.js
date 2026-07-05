@@ -56,6 +56,14 @@ export default defineConfig([
     },
   },
   {
+    // Entrypoint files mount the app with createRoot and export nothing, so
+    // the fast-refresh component-export rule doesn't apply to them.
+    files: ['src/client/game.tsx', 'src/client/splash.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     files: ['**/*.{js,mjs,cjs,ts,tsx}'],
     rules: {
       '@typescript-eslint/no-floating-promises': 'error',
