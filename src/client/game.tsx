@@ -60,6 +60,14 @@ type NotifState = { text: string; kind: 'success' | 'error' | 'info' } | null;
 type DragPos = { x: number; y: number };
 type PendingPlacement = { cell: number; pieceId: number } | null;
 
+// On touch, lift the dragged piece above the finger so it doesn't hide the
+// drop cell; hit-testing happens where the piece is, not where the finger is.
+const TOUCH_LIFT_PX = 56;
+
+function ghostTransform(x: number, y: number, scale: number): string {
+  return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
+}
+
 const App = () => {
   const [state, setState] = useState<GameStateResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,16 +76,21 @@ const App = () => {
   const [notif, setNotif] = useState<NotifState>(null);
   const [showLb, setShowLb] = useState(false);
   const [dragPieceId, setDragPieceId] = useState<number | null>(null);
-  const [dragPos, setDragPos] = useState<DragPos | null>(null);
   const [dragOverCell, setDragOverCell] = useState<number | null>(null);
-  const [returning, setReturning] = useState(false);
   const [pending, setPending] = useState<PendingPlacement>(null);
   const [returnedPieceId, setReturnedPieceId] = useState<number | null>(null);
   const [hintsOn, setHintsOn] = useState(true);
+  const [viewportW, setViewportW] = useState(() => window.innerWidth);
   const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragOriginRef = useRef<DragPos | null>(null);
   const returnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const returnedPieceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The ghost moves via direct style mutation on pointermove — never through
+  // React state — so dragging stays smooth on low-end phones. React would
+  // otherwise re-render the whole app 60+ times a second.
+  const ghostRef = useRef<HTMLDivElement | null>(null);
+  const dragMetaRef = useRef<{ startX: number; startY: number; liftY: number } | null>(null);
+  const lastHoverRef = useRef<number | null>(null);
 
   const notify = (text: string, kind: 'success' | 'error' | 'info') => {
     if (notifTimer.current) clearTimeout(notifTimer.current);
@@ -100,6 +113,12 @@ const App = () => {
       if (returnTimerRef.current) clearTimeout(returnTimerRef.current);
       if (returnedPieceTimerRef.current) clearTimeout(returnedPieceTimerRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => setViewportW(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   // Real-time canvas updates from other players
@@ -193,17 +212,20 @@ const App = () => {
   );
 
   // Animates the dragged piece back to its tray slot instead of just
-  // vanishing, so a miss reads as "dropped outside," not a glitch.
+  // vanishing, so a miss reads as "dropped outside," not a glitch. Driven by
+  // direct style mutation (not state) so the transition starts immediately.
   const snapBack = useCallback(() => {
     setDragOverCell(null);
-    setReturning(true);
+    lastHoverRef.current = null;
     const origin = dragOriginRef.current;
-    if (origin) setDragPos(origin);
+    const ghost = ghostRef.current;
+    if (ghost && origin) {
+      ghost.style.transition = 'transform 200ms ease-out';
+      ghost.style.transform = ghostTransform(origin.x, origin.y, 1);
+    }
     returnTimerRef.current = setTimeout(() => {
       setDragPieceId(null);
-      setDragPos(null);
-      setReturning(false);
-    }, 200);
+    }, 220);
   }, []);
 
   const handlePieceDragStart = useCallback(
@@ -212,10 +234,11 @@ const App = () => {
       e.preventDefault();
       e.currentTarget.setPointerCapture(e.pointerId);
       const rect = e.currentTarget.getBoundingClientRect();
+      const liftY = e.pointerType === 'touch' ? -TOUCH_LIFT_PX : 0;
       dragOriginRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      setReturning(false);
+      dragMetaRef.current = { startX: e.clientX, startY: e.clientY + liftY, liftY };
+      lastHoverRef.current = null;
       setDragPieceId(pieceId);
-      setDragPos({ x: e.clientX, y: e.clientY });
     },
     [placing, state]
   );
@@ -223,8 +246,18 @@ const App = () => {
   const handlePieceDragMove = useCallback(
     (e: ReactPointerEvent<HTMLButtonElement>) => {
       if (dragPieceId === null) return;
-      setDragPos({ x: e.clientX, y: e.clientY });
-      setDragOverCell(cellIndexAtPoint(e.clientX, e.clientY));
+      const meta = dragMetaRef.current;
+      if (!meta) return;
+      const x = e.clientX;
+      const y = e.clientY + meta.liftY;
+      const ghost = ghostRef.current;
+      if (ghost) ghost.style.transform = ghostTransform(x, y, 1.15);
+      // Only touch React state when the hovered cell actually changes.
+      const idx = cellIndexAtPoint(x, y);
+      if (idx !== lastHoverRef.current) {
+        lastHoverRef.current = idx;
+        setDragOverCell(idx);
+      }
     },
     [dragPieceId]
   );
@@ -233,14 +266,15 @@ const App = () => {
     (e: ReactPointerEvent<HTMLButtonElement>) => {
       if (dragPieceId === null) return;
       const pieceId = dragPieceId;
-      const cellIndex = cellIndexAtPoint(e.clientX, e.clientY);
+      const liftY = dragMetaRef.current?.liftY ?? 0;
+      const cellIndex = cellIndexAtPoint(e.clientX, e.clientY + liftY);
       const validDrop =
         cellIndex !== null && !!state && !state.canvas[String(cellIndex)] && !state.locked;
 
       if (validDrop && cellIndex !== null) {
         setDragOverCell(null);
+        lastHoverRef.current = null;
         setDragPieceId(null);
-        setDragPos(null);
         void commitPlacement(pieceId, cellIndex);
       } else {
         snapBack();
@@ -259,7 +293,7 @@ const App = () => {
     if (placing) return;
     setPending(null);
     setDragPieceId(null);
-    setDragPos(null);
+    setDragOverCell(null);
     setFlash(null);
     await fetch('/api/debug/reset-day', { method: 'POST' });
     const res = await fetch('/api/game-state');
@@ -294,9 +328,15 @@ const App = () => {
   const pct = Math.round((filledCount / totalCells) * 100);
   const draggedPiece = dragPieceId !== null ? (hand.find((p) => p.id === dragPieceId) ?? null) : null;
 
-  // Responsive cell size: ~(vw - padding) / gridSize, clamped
-  const CELL_SIZE = Math.min(Math.floor((180 - 8) / gridSize), 52);
-  const IMG_SIZE = CELL_SIZE * gridSize;
+  // The canvas is the hero (bigger drop targets); the target image is a
+  // smaller reference beside it. Sized off the real viewport, capped for
+  // desktop.
+  const contentW = Math.min(viewportW, 448) - 24 /* page padding */ - 12 /* column gap */;
+  const CELL_SIZE = Math.min(
+    Math.floor((contentW * 0.62 - (gridSize - 1) * 2) / gridSize),
+    64
+  );
+  const IMG_SIZE = Math.min(Math.floor(contentW * 0.36), 160);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0f0f23] text-white select-none">
@@ -598,17 +638,26 @@ const App = () => {
         </div>
       )}
 
-      {/* Drag ghost: the piece lifted off the tray, following the pointer */}
-      {dragPieceId !== null && dragPos && (
+      {/* Drag ghost: the piece lifted off the tray, following the pointer.
+          Its transform is set imperatively (mount + pointermove), never via
+          JSX, so React re-renders can't reset its position mid-drag. */}
+      {dragPieceId !== null && (
         <div
-          className={`fixed rounded-lg border-2 border-orange-400 overflow-hidden pointer-events-none z-50 shadow-[0_10px_28px_rgba(0,0,0,0.65)] ${
-            returning ? 'transition-all duration-200 ease-out' : ''
-          }`}
+          ref={(el) => {
+            ghostRef.current = el;
+            if (el && dragMetaRef.current && !el.dataset.positioned) {
+              el.dataset.positioned = '1';
+              el.style.transform = ghostTransform(
+                dragMetaRef.current.startX,
+                dragMetaRef.current.startY,
+                1.15
+              );
+            }
+          }}
+          className="fixed left-0 top-0 rounded-lg border-2 border-orange-400 overflow-hidden pointer-events-none z-50 shadow-[0_10px_28px_rgba(0,0,0,0.65)]"
           style={{
             ...pieceStyle(dragPieceId, gridSize, imageUrl, 68),
-            left: dragPos.x,
-            top: dragPos.y,
-            transform: `translate(-50%, -50%) scale(${returning ? 1 : 1.15})`,
+            willChange: 'transform',
           }}
         >
           {draggedPiece && hintsOn && (
