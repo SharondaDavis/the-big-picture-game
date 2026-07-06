@@ -1,5 +1,21 @@
 @import 'tailwindcss';
 
+/* Deep space-glass backdrop: faint warm glow up top, near-black base. */
+.app-bg {
+  background:
+    radial-gradient(1100px 480px at 50% -12%, rgba(251, 146, 60, 0.07), transparent 60%),
+    linear-gradient(180deg, #0b0b18 0%, #070710 100%);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.toast-in {
+  animation: toast-in 0.18s ease-out;
+}
+
 @keyframes cell-shake {
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-4px); }

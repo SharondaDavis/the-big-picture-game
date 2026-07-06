@@ -5,28 +5,28 @@ import { context, requestExpandedMode } from '@devvit/web/client';
 
 const Splash = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#0f0f23] text-white px-4 gap-4">
+    <div className="flex flex-col items-center justify-center min-h-screen app-bg text-white px-6 gap-5">
       <div className="text-center">
-        <h1 className="text-3xl font-black tracking-tight text-orange-400 uppercase">
+        <p className="text-[9px] text-white/30 uppercase tracking-[0.35em] mb-2">Daily communal puzzle</p>
+        <h1 className="text-3xl font-black tracking-tight uppercase bg-gradient-to-r from-orange-400 via-amber-300 to-orange-400 bg-clip-text text-transparent">
           The Big Picture
         </h1>
-        <p className="text-white/60 text-sm mt-1">A daily communal puzzle for this community</p>
       </div>
 
-      <div className="flex flex-col items-center gap-2 text-sm text-white/70 max-w-xs text-center">
-        <p>One image. Everyone together. Three wrong guesses.</p>
-        <p>Place your pieces. Watch the canvas fill in real time.</p>
-      </div>
+      <p className="text-sm text-white/50 max-w-[260px] text-center leading-relaxed">
+        One image. Everyone together. Three wrong guesses. The canvas fills in real time — and
+        nobody can finish it alone.
+      </p>
 
       <button
-        className="mt-2 bg-orange-500 hover:bg-orange-400 text-white font-bold px-8 py-3 rounded-full text-base transition-colors active:scale-95"
+        className="mt-1 bg-gradient-to-r from-orange-500 to-amber-400 text-black font-bold px-8 py-3 rounded-full text-sm tracking-wide transition-transform active:scale-95 shadow-[0_8px_24px_rgba(251,146,60,0.25)]"
         onClick={(e) => requestExpandedMode(e.nativeEvent, 'game')}
       >
-        Play Today's Puzzle
+        PLAY TODAY'S PUZZLE
       </button>
 
-      <p className="text-white/30 text-xs">
-        Hey {context.username ?? 'there'} — your pieces are waiting
+      <p className="text-white/25 text-[11px]">
+        {context.username ? `u/${context.username} — your pieces are waiting` : 'Your pieces are waiting'}
       </p>
     </div>
   );

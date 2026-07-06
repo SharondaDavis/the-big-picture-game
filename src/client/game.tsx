@@ -362,7 +362,7 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0f0f23] text-white/60 text-sm">
+      <div className="flex items-center justify-center min-h-screen app-bg text-white/60 text-sm">
         Loading today's puzzle…
       </div>
     );
@@ -370,7 +370,7 @@ const App = () => {
 
   if (!state) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#0f0f23] text-white/60 text-sm">
+      <div className="flex items-center justify-center min-h-screen app-bg text-white/60 text-sm">
         Couldn't load the puzzle. Try refreshing.
       </div>
     );
@@ -399,60 +399,59 @@ const App = () => {
   const IMG_SIZE = Math.min(Math.floor(contentW * 0.36), 160);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0f0f23] text-white select-none">
+    <div className="flex flex-col min-h-screen app-bg text-white select-none">
       {/* Header */}
-      <header className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-[#0f0f23]/90 sticky top-0 z-10">
-        <div>
-          <span className="text-orange-400 font-black text-base uppercase tracking-tight">
+      <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-10 bg-[#0b0b18]/80 backdrop-blur-md border-b border-white/[0.06]">
+        <div className="leading-tight">
+          <div className="font-black text-sm tracking-tight bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent uppercase">
             The Big Picture
-          </span>
-          <span className="text-white/40 text-xs ml-2">{title}</span>
+          </div>
+          <div className="text-[10px] text-white/35 tracking-wide">{title}</div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-white/60">
-            ✦ {score}
-          </span>
-          <span className="text-xs font-medium">
-            {triesLeft >= 3 ? '❤️❤️❤️' : triesLeft === 2 ? '❤️❤️🖤' : triesLeft === 1 ? '❤️🖤🖤' : '🖤🖤🖤'}
-          </span>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setHintsOn((v) => !v)}
-            className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-colors ${
+            className={`text-[10px] font-medium tracking-wide px-2.5 py-1 rounded-full border transition-colors ${
               hintsOn
-                ? 'border-orange-400/60 text-orange-300 bg-orange-400/10'
-                : 'border-white/20 text-white/40'
+                ? 'border-orange-400/40 text-orange-300 bg-orange-400/[0.08]'
+                : 'border-white/[0.12] text-white/45'
             }`}
             title="Zone hints show which corner of the picture each piece belongs in. Play all day without them for double points."
           >
-            💡 {hintsOn ? 'Hints on' : bonusLive ? 'Hints off · 2×' : 'Hints off'}
+            {hintsOn ? 'HINTS ON' : bonusLive ? 'HINTS OFF · 2×' : 'HINTS OFF'}
           </button>
           <button
             onClick={() => setShowLb((v) => !v)}
-            className="text-white/50 hover:text-white text-xs transition-colors"
+            className="p-1.5 rounded-full border border-white/[0.12] text-white/50 hover:text-white hover:border-white/30 transition-colors"
+            title="Today's leaderboard"
           >
-            🏆
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" aria-hidden>
+              <rect x="1" y="6" width="3" height="7" rx="0.5" />
+              <rect x="5.5" y="1" width="3" height="12" rx="0.5" />
+              <rect x="10" y="8.5" width="3" height="4.5" rx="0.5" />
+            </svg>
           </button>
           {state.playtest && (
             <button
               onClick={() => void resetDay()}
-              className="text-[10px] px-1.5 py-0.5 rounded-full border border-white/20 text-white/40 hover:text-white/80 transition-colors"
+              className="text-[10px] px-2 py-1 rounded-full border border-white/[0.12] text-white/40 hover:text-white/80 transition-colors"
               title="Dev only: reset today's puzzle and deal a fresh hand"
             >
-              ↺ dev
+              ↺
             </button>
           )}
         </div>
       </header>
 
-      {/* Notification bar */}
+      {/* Floating toast */}
       {notif && (
         <div
-          className={`text-center text-sm py-2 px-4 font-medium transition-all ${
-            notif?.kind === 'success'
-              ? 'bg-green-600/90 text-white'
-              : notif?.kind === 'error'
-                ? 'bg-red-600/90 text-white'
-                : 'bg-white/10 text-white/80'
+          className={`toast-in fixed top-14 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full text-xs font-medium border backdrop-blur-md whitespace-nowrap ${
+            notif.kind === 'success'
+              ? 'border-emerald-400/30 bg-emerald-500/[0.12] text-emerald-300'
+              : notif.kind === 'error'
+                ? 'border-red-400/30 bg-red-500/[0.12] text-red-300'
+                : 'border-white/[0.12] bg-white/[0.06] text-white/70'
           }`}
         >
           {notif.text}
@@ -461,25 +460,25 @@ const App = () => {
 
       {/* Completion banner */}
       {completed && (
-        <div className="bg-gradient-to-r from-orange-500 to-yellow-400 text-black font-bold text-center py-2 text-sm">
-          🎉 The community assembled it! Bonus unlocked for all contributors.
+        <div className="mx-4 mt-3 rounded-xl border border-amber-300/25 bg-gradient-to-r from-orange-500/[0.12] to-amber-300/[0.06] text-amber-200/90 text-center py-2 text-xs font-medium tracking-wide">
+          The community assembled it — bonus unlocked for all contributors
         </div>
       )}
 
       {/* Locked banner */}
       {locked && !completed && (
-        <div className="bg-white/5 text-white/60 text-center py-2 text-sm border-b border-white/10">
-          🔒 No tries left today — come back tomorrow
+        <div className="mx-4 mt-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/45 text-center py-2 text-xs tracking-wide">
+          No tries left today — come back tomorrow
         </div>
       )}
 
-      {/* Main: two panels side-by-side */}
-      <div className="flex gap-3 px-3 pt-3 justify-center">
+      {/* Main: reference image + hero canvas */}
+      <div className="flex gap-3 px-4 pt-4 justify-center items-start">
         {/* Target image */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-white/40 text-[10px] uppercase tracking-widest">Target</span>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-white/30 text-[9px] uppercase tracking-[0.2em]">Target</span>
           <div
-            className="rounded-lg overflow-hidden border border-white/10"
+            className="rounded-xl overflow-hidden border border-white/[0.08] shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
             style={{ width: IMG_SIZE, height: IMG_SIZE }}
           >
             <img
@@ -491,10 +490,10 @@ const App = () => {
         </div>
 
         {/* Shared canvas */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-white/40 text-[10px] uppercase tracking-widest">Canvas</span>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-white/30 text-[9px] uppercase tracking-[0.2em]">Community canvas</span>
           <div
-            className="grid rounded-lg overflow-hidden border border-white/10"
+            className="grid rounded-xl overflow-hidden border border-white/[0.08] shadow-[0_8px_24px_rgba(0,0,0,0.4)]"
             style={{
               gridTemplateColumns: `repeat(${gridSize}, ${CELL_SIZE}px)`,
               gridTemplateRows: `repeat(${gridSize}, ${CELL_SIZE}px)`,
@@ -576,24 +575,41 @@ const App = () => {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="px-3 pt-3">
-        <div className="flex items-center justify-between text-xs text-white/40 mb-1">
-          <span>Community: {filledCount}/{totalCells} cells filled</span>
-          <span>{streak > 0 ? `🔥 ${streak}d streak` : `Score: ${score}`}</span>
+      {/* Stats + progress */}
+      <div className="px-4 pt-4">
+        <div className="flex items-center justify-between text-[11px] mb-1.5">
+          <span className="text-white/40 tabular-nums">
+            {filledCount}<span className="text-white/25">/{totalCells} placed</span>
+          </span>
+          <span className="flex items-center gap-3 tabular-nums">
+            <span className="text-orange-300/90 font-medium">{score} pts</span>
+            {streak > 0 && <span className="text-white/40">{streak}d streak</span>}
+          </span>
         </div>
-        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1 bg-white/[0.07] rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-orange-500 to-yellow-400 rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-orange-500 to-amber-300 rounded-full transition-all duration-500"
             style={{ width: `${pct}%` }}
           />
         </div>
       </div>
 
       {/* Hand */}
-      <div className="px-3 pt-4">
-        <div className="text-xs text-white/40 uppercase tracking-widest mb-2">
-          Your pieces {locked ? '(locked)' : '— tap to select, or drag'}
+      <div className="mx-4 mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[9px] text-white/35 uppercase tracking-[0.2em]">
+            Your pieces{locked ? ' · locked' : ''}
+          </span>
+          <span className="flex items-center gap-1" title={`${triesLeft} tries left today`}>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className={`h-1 w-5 rounded-full transition-colors ${
+                  i < triesLeft ? 'bg-gradient-to-r from-orange-400 to-amber-300' : 'bg-white/10'
+                }`}
+              />
+            ))}
+          </span>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {hand.length === 0 && !locked && (
@@ -635,30 +651,30 @@ const App = () => {
       </div>
 
       {/* Zone hint / instruction */}
-      <div className="px-3 pt-3 pb-4 min-h-[36px]">
+      <div className="px-4 pt-3 pb-5 min-h-[36px]">
         {activePiece ? (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-xs">
             {hintsOn && (
-              <span className="bg-orange-400/20 text-orange-300 px-2 py-0.5 rounded text-xs font-semibold">
+              <span className="border border-orange-400/30 bg-orange-400/[0.08] text-orange-300 px-2 py-0.5 rounded-full font-medium">
                 {ZONE_ARROW[activePiece.zone]} {ZONE_LABEL[activePiece.zone]}
               </span>
             )}
-            <span className="text-white/50">
+            <span className="text-white/45">
               {draggedPiece
                 ? hintsOn
-                  ? '→ drop it in that corner of the canvas'
-                  : 'Drop it where it belongs'
+                  ? 'drop it in that corner of the canvas'
+                  : 'drop it where it belongs'
                 : hintsOn
-                  ? '→ tap the cell in that corner of the canvas'
-                  : 'Tap the cell where it belongs'}
+                  ? 'tap the cell in that corner of the canvas'
+                  : 'tap the cell where it belongs'}
             </span>
           </div>
         ) : locked ? null : (
-          <p className="text-white/30 text-xs">
+          <p className="text-white/30 text-[11px] leading-relaxed">
             Compare pieces to the target image, then tap a piece and tap the cell where it belongs.
             {hintsOn && ' The arrow on each piece points to its corner of the picture.'}
             {bonusLive && (
-              <span className="text-orange-300/80">
+              <span className="text-orange-300/70">
                 {' '}
                 Hard mode: correct pieces are worth 2 points.
               </span>
@@ -670,16 +686,16 @@ const App = () => {
       {/* Leaderboard drawer */}
       {showLb && (
         <div
-          className="fixed inset-0 bg-black/70 z-20 flex items-end"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 flex items-end"
           onClick={() => setShowLb(false)}
         >
           <div
-            className="w-full bg-[#1a1a3e] rounded-t-2xl p-4 pb-8"
+            className="w-full bg-[#10101e]/95 border-t border-white/[0.08] rounded-t-2xl p-5 pb-8"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="font-bold text-orange-400 text-sm uppercase tracking-wide">
-                Today's Leaders
+              <span className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-medium">
+                Today's leaders
               </span>
               <button onClick={() => setShowLb(false)} className="text-white/40 text-lg leading-none">
                 ×
