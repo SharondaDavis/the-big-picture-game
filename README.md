@@ -90,6 +90,8 @@ Daily puzzles are original, hand-picked stylized illustrations defined in [`src/
 
 - Automate a fresh daily image pulled from current events instead of hand-picking art
 - Community-submitted puzzles — including AI-generated art the community votes into the daily slot
+- Jigsaw-look piece shapes (knobs/notches via SVG masks) for intricate puzzles, keeping the square grid underneath
+- Larger grids (6×6+) as communities grow, so every player always gets a full hand
 - Seasonal/event pictures the whole platform assembles together
 
 ## License

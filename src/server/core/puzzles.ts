@@ -16,30 +16,27 @@ export type PuzzleDefinition = {
   gridSize: number;
 };
 
-// Hand-pick daily puzzles here. Swap imageUrl before launch.
-export const PUZZLES: PuzzleDefinition[] = [
-  {
-    date: '2026-06-27',
-    title: "Rocket's Return",
-    imageUrl: '/puzzle-001.svg',
-    gridSize: 4,
-  },
-  {
-    date: '2026-06-28',
-    title: "Rocket's Return",
-    imageUrl: '/puzzle-001.svg',
-    gridSize: 4,
-  },
-  {
-    date: '2026-06-29',
-    title: "Rocket's Return",
-    imageUrl: '/puzzle-001.svg',
-    gridSize: 4,
-  },
+// Date-pinned puzzles override the rotation — use these to tie a specific
+// day's art to a real-world moment.
+export const PUZZLES: PuzzleDefinition[] = [];
+
+// Days without a pinned puzzle rotate deterministically through this pool,
+// so every player worldwide sees the same picture on the same UTC date.
+// Grid scales with the art's intricacy: bolder pictures get fewer, larger
+// tiles; detailed scenes get more pieces so more players can hold a full
+// hand. Keep gridSize ≤ 5 until the crowd is big enough to finish more.
+export const PUZZLE_POOL: Omit<PuzzleDefinition, 'date'>[] = [
+  { title: "Rocket's Return", imageUrl: '/puzzle-001.svg', gridSize: 4 },
+  { title: 'Beneath the Waves', imageUrl: '/puzzle-002.svg', gridSize: 5 },
+  { title: 'Carnival Nights', imageUrl: '/puzzle-003.svg', gridSize: 5 },
 ];
 
 export function getPuzzleForDate(date: string): PuzzleDefinition {
-  return PUZZLES.find((p) => p.date === date) ?? PUZZLES[PUZZLES.length - 1]!;
+  const pinned = PUZZLES.find((p) => p.date === date);
+  if (pinned) return pinned;
+  const dayNumber = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
+  const index = ((dayNumber % PUZZLE_POOL.length) + PUZZLE_POOL.length) % PUZZLE_POOL.length;
+  return { ...PUZZLE_POOL[index]!, date };
 }
 
 export function todayDate(): string {

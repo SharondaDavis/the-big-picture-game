@@ -72,6 +72,49 @@ function ghostTransform(x: number, y: number, scale: number): string {
   return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
 }
 
+// Puzzles roll over at UTC midnight (the server keys days by UTC date).
+function msUntilNextUtcMidnight(nowMs: number): number {
+  const d = new Date(nowMs);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1) - nowMs;
+}
+
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+const MEDAL_COLORS = ['bg-amber-300', 'bg-slate-300', 'bg-amber-600'];
+
+const COMPLETION_MESSAGES = [
+  'We built it together.',
+  'Every piece was one of you.',
+  'The whole picture, from all of us.',
+  'Another day, another picture — done.',
+];
+
+const CONFETTI_COLORS = ['#fb923c', '#fcd34d', '#7fd4c1', '#e86ba7', '#8fa8ff', '#f6e3a8'];
+
+type ConfettiPiece = {
+  left: number;
+  size: number;
+  color: string;
+  delay: number;
+  duration: number;
+};
+
+function makeConfetti(count: number): ConfettiPiece[] {
+  return Array.from({ length: count }, (_, i) => ({
+    left: Math.random() * 100,
+    size: 6 + Math.random() * 6,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length]!,
+    delay: Math.random() * 0.8,
+    duration: 2.4 + Math.random() * 1.8,
+  }));
+}
+
 const App = () => {
   const [state, setState] = useState<GameStateResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,6 +129,9 @@ const App = () => {
   const [returnedPieceId, setReturnedPieceId] = useState<number | null>(null);
   const [hintsOn, setHintsOn] = useState(true);
   const [viewportW, setViewportW] = useState(() => window.innerWidth);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [celebration, setCelebration] = useState<ConfettiPiece[] | null>(null);
+  const prevCompletedRef = useRef<boolean | null>(null);
   const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragOriginRef = useRef<DragPos | null>(null);
   const returnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -135,6 +181,26 @@ const App = () => {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  // Tick the next-puzzle countdown, but only while the day-summary card is
+  // showing (locked out) — no idle timers during play.
+  const lockedOut = state?.locked ?? false;
+  useEffect(() => {
+    if (!lockedOut) return;
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [lockedOut]);
+
+  // Fire the celebration only when completion happens live (false -> true
+  // while watching), not when opening an already-finished puzzle.
+  const isCompleted = state?.completed ?? null;
+  useEffect(() => {
+    if (isCompleted === null) return;
+    if (prevCompletedRef.current === false && isCompleted) {
+      setCelebration(makeConfetti(28));
+    }
+    prevCompletedRef.current = isCompleted;
+  }, [isCompleted]);
 
   // Real-time canvas updates from other players
   useEffect(() => {
@@ -387,6 +453,9 @@ const App = () => {
   const draggedPiece = dragPieceId !== null ? (hand.find((p) => p.id === dragPieceId) ?? null) : null;
   const selectedPiece = selectedId !== null ? (hand.find((p) => p.id === selectedId) ?? null) : null;
   const activePiece = draggedPiece ?? selectedPiece;
+  const myRank = leaderboard.findIndex((e) => e.username === state.username);
+  const dayNumber = Math.floor(Date.parse(`${puzzle.date}T00:00:00Z`) / 86_400_000);
+  const completionMessage = COMPLETION_MESSAGES[dayNumber % COMPLETION_MESSAGES.length]!;
 
   // The canvas is the hero (bigger drop targets); the target image is a
   // smaller reference beside it. Sized off the real viewport, capped for
@@ -465,10 +534,41 @@ const App = () => {
         </div>
       )}
 
-      {/* Locked banner */}
-      {locked && !completed && (
-        <div className="mx-4 mt-3 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white/45 text-center py-2 text-xs tracking-wide">
-          No tries left today — come back tomorrow
+      {/* Day summary card (out of tries) */}
+      {locked && (
+        <div className="mx-4 mt-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-center">
+          <div className="text-[9px] uppercase tracking-[0.25em] text-white/35 mb-3">
+            Today's run
+          </div>
+          <div className="flex justify-center gap-6 mb-3 tabular-nums">
+            <div>
+              <div className="text-lg font-bold text-orange-300">{score}</div>
+              <div className="text-[9px] uppercase tracking-widest text-white/30">pts</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-white/85">
+                {myRank >= 0 ? `#${myRank + 1}` : '—'}
+              </div>
+              <div className="text-[9px] uppercase tracking-widest text-white/30">rank</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-white/85">{streak}</div>
+              <div className="text-[9px] uppercase tracking-widest text-white/30">day streak</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-white/85">{pct}%</div>
+              <div className="text-[9px] uppercase tracking-widest text-white/30">canvas</div>
+            </div>
+          </div>
+          <div className="text-2xl font-bold tabular-nums tracking-wider bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+            {formatCountdown(msUntilNextUtcMidnight(nowMs))}
+          </div>
+          <div className="text-[10px] text-white/35 mt-1">until the next picture drops</div>
+          <div className="text-[11px] text-white/50 mt-2.5">
+            {streak > 0
+              ? `Come back tomorrow to keep your ${streak}-day streak alive`
+              : 'Play tomorrow to start a streak'}
+          </div>
         </div>
       )}
 
@@ -593,6 +693,35 @@ const App = () => {
           />
         </div>
       </div>
+
+      {/* Always-visible top 3 — tap for the full board */}
+      {leaderboard.length > 0 && (
+        <button
+          onClick={() => setShowLb(true)}
+          className="mx-4 mt-3 flex items-center gap-3 text-[11px] rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition-colors text-left"
+        >
+          {leaderboard.slice(0, 3).map((entry, i) => (
+            <span key={entry.username} className="flex items-center gap-1.5 min-w-0">
+              <span className={`h-2 w-2 rounded-full shrink-0 ${MEDAL_COLORS[i]}`} />
+              <span
+                className={`truncate max-w-[76px] ${
+                  entry.username === state.username ? 'text-orange-300' : 'text-white/60'
+                }`}
+              >
+                {entry.username}
+              </span>
+              <span className="text-white/30 tabular-nums shrink-0">{entry.score}</span>
+            </span>
+          ))}
+          <span className="ml-auto shrink-0 text-white/35">
+            {myRank > 2 ? (
+              <span className="text-orange-300/90">you #{myRank + 1}</span>
+            ) : (
+              '›'
+            )}
+          </span>
+        </button>
+      )}
 
       {/* Hand */}
       <div className="mx-4 mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3">
@@ -754,6 +883,52 @@ const App = () => {
               {ZONE_ARROW[draggedPiece.zone]}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Completion celebration: the finished picture, confetti, and a
+          positive send-off. Fires only when completion happens live. */}
+      {celebration && (
+        <div
+          className="celebrate-overlay fixed inset-0 z-40 bg-[#06060f]/92 backdrop-blur-sm flex flex-col items-center justify-center px-8 overflow-hidden"
+          onClick={() => setCelebration(null)}
+        >
+          {celebration.map((c, i) => (
+            <span
+              key={i}
+              className="confetti"
+              style={{
+                left: `${c.left}%`,
+                width: c.size,
+                height: c.size * 0.55,
+                background: c.color,
+                animationDelay: `${c.delay}s`,
+                animationDuration: `${c.duration}s`,
+              }}
+            />
+          ))}
+          <div className="celebrate-text text-[9px] uppercase tracking-[0.35em] text-amber-300/80 mb-4">
+            Puzzle complete
+          </div>
+          <div className="celebrate-image rounded-2xl overflow-hidden border border-amber-300/30 shadow-[0_0_60px_rgba(251,146,60,0.25)]">
+            <img
+              src={imageUrl}
+              alt="The completed picture"
+              style={{
+                width: Math.min(viewportW - 96, 280),
+                height: Math.min(viewportW - 96, 280),
+                display: 'block',
+              }}
+            />
+          </div>
+          <div className="celebrate-text text-center mt-5">
+            <div className="text-lg font-bold bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+              {completionMessage}
+            </div>
+            <div className="text-white/40 text-xs mt-2">
+              A new picture drops at midnight — tap to continue
+            </div>
+          </div>
         </div>
       )}
     </div>
