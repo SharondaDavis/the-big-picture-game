@@ -48,7 +48,6 @@ export type PlaceResponse = {
   alreadyFilled: boolean;
   triesLeft: number;
   score: number;
-  newPiece: Piece | null;
   hand: Piece[];
   canvas: Record<string, true>;
   completed: boolean;

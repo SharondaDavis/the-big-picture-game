@@ -14,7 +14,7 @@ import {
   getZone,
   getUserHand,
   initUserIfNeeded,
-  dealPieces,
+  reconcileHand,
   getLeaderboard,
   updateStreak,
   seedCanvas,
@@ -40,6 +40,7 @@ api.get('/game-state', async (c) => {
 
   await seedCanvas(today, puzzle.gridSize, 3);
   await initUserIfNeeded(today, username, puzzle.gridSize);
+  await reconcileHand(today, username, puzzle.gridSize);
 
   const [canvas, hand, triesStr, scoreStr, streakStr, leaderboard, completeStr, usedHintsStr] =
     await Promise.all([
@@ -165,7 +166,6 @@ api.post('/place', async (c) => {
       alreadyFilled: true,
       triesLeft,
       score: scoreStr !== undefined ? parseInt(scoreStr) : 0,
-      newPiece: null,
       hand: handIds.map((id) => ({ id, zone: getZone(id, gridSize) })),
       canvas,
       completed: !!(await redis.get(K.complete(today))),
@@ -179,25 +179,34 @@ api.post('/place', async (c) => {
   if (correct) {
     await redis.hSet(K.canvas(today), { [String(cellIndex)]: '1' });
 
-    const newHandIds = handIds.filter((id) => id !== pieceId);
-    const newPieces = await dealPieces(today, gridSize, 1);
-    const updatedHandIds = [...newHandIds, ...newPieces];
+    // No refill: five pieces a day is the whole hand, so no single player
+    // can run the board — the community is structurally required.
+    const updatedHandIds = handIds.filter((id) => id !== pieceId);
     await redis.set(K.hand(today, username), JSON.stringify(updatedHandIds));
 
     const pointsEarned = usedHints ? 1 : 2;
-    const newScore = await redis.incrBy(K.score(today, username), pointsEarned);
+    let newScore = await redis.incrBy(K.score(today, username), pointsEarned);
     await redis.zAdd(K.lb(today), { score: newScore, member: username });
     await updateStreak(username, today);
 
     const filledCount = await redis.hLen(K.canvas(today));
     const completed = filledCount >= totalCells;
-    if (completed) await redis.set(K.complete(today), '1');
+    if (completed) {
+      // The finishing placement triggers the payout exactly once: +3 to
+      // everyone who placed at least one piece today.
+      const alreadyComplete = await redis.get(K.complete(today));
+      if (!alreadyComplete) {
+        await redis.set(K.complete(today), '1');
+        const contributors = await redis.zRange(K.lb(today), 0, -1, { by: 'rank' });
+        for (const entry of contributors) {
+          await redis.zIncrBy(K.lb(today), entry.member, 3);
+          await redis.incrBy(K.score(today, entry.member), 3);
+        }
+        newScore += 3;
+      }
+    }
 
     const canvas = await getCanvas(today);
-    const newPiece =
-      newPieces.length > 0 && newPieces[0] !== undefined
-        ? { id: newPieces[0], zone: getZone(newPieces[0], gridSize) }
-        : null;
 
     const realtimeMsg: RealtimeCanvasMessage = {
       type: 'canvas',
@@ -213,7 +222,6 @@ api.post('/place', async (c) => {
       alreadyFilled: false,
       triesLeft,
       score: newScore,
-      newPiece,
       hand: updatedHandIds.map((id) => ({ id, zone: getZone(id, gridSize) })),
       canvas,
       completed,
@@ -233,7 +241,6 @@ api.post('/place', async (c) => {
       alreadyFilled: false,
       triesLeft: newTries,
       score: scoreStr !== undefined ? parseInt(scoreStr) : 0,
-      newPiece: null,
       hand: handIds.map((id) => ({ id, zone: getZone(id, gridSize) })),
       canvas,
       completed: !!(await redis.get(K.complete(today))),
@@ -241,6 +248,48 @@ api.post('/place', async (c) => {
       usedHints,
     });
   }
+});
+
+// Posts the caller's day summary as a comment on this post — the share loop
+// that seeds the comment-section culture.
+api.post('/share', async (c) => {
+  const { postId } = context;
+  if (!postId) return c.json<ErrorResponse>({ status: 'error', message: 'No postId' }, 400);
+
+  const username = (await reddit.getCurrentUsername()) ?? 'anonymous';
+  const today = todayDate();
+  const puzzle = getPuzzleForDate(today);
+  const totalCells = puzzle.gridSize * puzzle.gridSize;
+
+  const [scoreStr, streakStr, filledCount, completeStr] = await Promise.all([
+    redis.get(K.score(today, username)),
+    redis.get(K.streak(username)),
+    redis.hLen(K.canvas(today)),
+    redis.get(K.complete(today)),
+  ]);
+  const score = scoreStr !== undefined ? parseInt(scoreStr) : 0;
+  const streakData: { count: number } = streakStr ? JSON.parse(streakStr) : { count: 0 };
+  const pct = Math.round((filledCount / totalCells) * 100);
+
+  const parts = [`🧩 ${score} pts on today's Big Picture`];
+  if (streakData.count > 1) parts.push(`${streakData.count}-day streak`);
+  parts.push(completeStr ? 'we finished the picture!' : `canvas ${pct}% complete`);
+  const text = `${parts.join(' · ')} — come place your pieces`;
+
+  await reddit.submitComment({ id: postId, text });
+  return c.json({ type: 'share', ok: true });
+});
+
+// Community picture ideas for future puzzles.
+api.post('/suggest', async (c) => {
+  const username = (await reddit.getCurrentUsername()) ?? 'anonymous';
+  const body = await c.req.json<{ idea?: string }>();
+  const idea = (body.idea ?? '').trim().slice(0, 280);
+  if (!idea) return c.json<ErrorResponse>({ status: 'error', message: 'Empty idea' }, 400);
+
+  const ts = Date.now();
+  await redis.zAdd(K.suggestions(), { score: ts, member: `${ts}|u/${username}|${idea}` });
+  return c.json({ type: 'suggest', ok: true });
 });
 
 api.get('/canvas', async (c) => {
@@ -260,3 +309,4 @@ api.get('/canvas', async (c) => {
     totalCells: puzzle.gridSize * puzzle.gridSize,
   });
 });
+

@@ -131,6 +131,11 @@ const App = () => {
   const [viewportW, setViewportW] = useState(() => window.innerWidth);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [celebration, setCelebration] = useState<ConfettiPiece[] | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [shareDone, setShareDone] = useState(false);
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [suggestText, setSuggestText] = useState('');
+  const [suggestBusy, setSuggestBusy] = useState(false);
   const prevCompletedRef = useRef<boolean | null>(null);
   const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragOriginRef = useRef<DragPos | null>(null);
@@ -183,13 +188,55 @@ const App = () => {
   }, []);
 
   // Tick the next-puzzle countdown, but only while the day-summary card is
-  // showing (locked out) — no idle timers during play.
-  const lockedOut = state?.locked ?? false;
+  // showing (out of tries or out of pieces) — no idle timers during play.
+  const dayDoneNow = state ? state.locked || state.hand.length === 0 : false;
   useEffect(() => {
-    if (!lockedOut) return;
+    if (!dayDoneNow) return;
     const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [lockedOut]);
+  }, [dayDoneNow]);
+
+  const shareRun = useCallback(async () => {
+    if (sharing || shareDone) return;
+    setSharing(true);
+    try {
+      const res = await fetch('/api/share', { method: 'POST' });
+      if (res.ok) {
+        setShareDone(true);
+        notify('Shared to the comments!', 'success');
+      } else {
+        notify("Couldn't share — try again", 'error');
+      }
+    } catch {
+      notify("Couldn't share — try again", 'error');
+    } finally {
+      setSharing(false);
+    }
+  }, [sharing, shareDone]);
+
+  const submitSuggestion = useCallback(async () => {
+    const idea = suggestText.trim();
+    if (!idea || suggestBusy) return;
+    setSuggestBusy(true);
+    try {
+      const res = await fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idea }),
+      });
+      if (res.ok) {
+        setShowSuggest(false);
+        setSuggestText('');
+        notify("Thanks — it's in the pile for a future puzzle", 'success');
+      } else {
+        notify("Couldn't submit — try again", 'error');
+      }
+    } catch {
+      notify("Couldn't submit — try again", 'error');
+    } finally {
+      setSuggestBusy(false);
+    }
+  }, [suggestText, suggestBusy]);
 
   // Fire the celebration only when completion happens live (false -> true
   // while watching), not when opening an already-finished puzzle.
@@ -454,6 +501,7 @@ const App = () => {
   const selectedPiece = selectedId !== null ? (hand.find((p) => p.id === selectedId) ?? null) : null;
   const activePiece = draggedPiece ?? selectedPiece;
   const myRank = leaderboard.findIndex((e) => e.username === state.username);
+  const dayDone = locked || hand.length === 0;
   const dayNumber = Math.floor(Date.parse(`${puzzle.date}T00:00:00Z`) / 86_400_000);
   const completionMessage = COMPLETION_MESSAGES[dayNumber % COMPLETION_MESSAGES.length]!;
 
@@ -534,11 +582,18 @@ const App = () => {
         </div>
       )}
 
-      {/* Day summary card (out of tries) */}
-      {locked && (
+      {/* Day summary card (out of tries or out of pieces) */}
+      {dayDone && (
         <div className="mx-4 mt-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-center">
-          <div className="text-[9px] uppercase tracking-[0.25em] text-white/35 mb-3">
+          <div className="text-[9px] uppercase tracking-[0.25em] text-white/35 mb-1">
             Today's run
+          </div>
+          <div className="text-sm font-bold text-white/85 mb-3">
+            {locked
+              ? 'Out of tries'
+              : filledCount >= totalCells
+                ? 'Picture complete'
+                : 'Your part is done'}
           </div>
           <div className="flex justify-center gap-6 mb-3 tabular-nums">
             <div>
@@ -568,6 +623,21 @@ const App = () => {
             {streak > 0
               ? `Come back tomorrow to keep your ${streak}-day streak alive`
               : 'Play tomorrow to start a streak'}
+          </div>
+          <div className="flex justify-center gap-2 mt-3.5">
+            <button
+              onClick={() => void shareRun()}
+              disabled={sharing || shareDone}
+              className="text-[11px] font-bold bg-gradient-to-r from-orange-500 to-amber-400 text-black px-4 py-2 rounded-full transition-transform active:scale-95 disabled:opacity-50"
+            >
+              {shareDone ? 'Shared ✓' : 'Share my run'}
+            </button>
+            <button
+              onClick={() => setShowSuggest(true)}
+              className="text-[11px] text-white/60 border border-white/[0.12] px-4 py-2 rounded-full hover:text-white/90 transition-colors"
+            >
+              Suggest a picture
+            </button>
           </div>
         </div>
       )}
@@ -742,7 +812,11 @@ const App = () => {
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {hand.length === 0 && !locked && (
-            <span className="text-white/30 text-sm">Canvas is full — great work!</span>
+            <span className="text-white/30 text-sm">
+              {filledCount >= totalCells
+                ? 'Canvas complete — great work!'
+                : 'All pieces placed — your part of today’s picture is done.'}
+            </span>
           )}
           {hand.map((piece) => {
             const isDragging = piece.id === dragPieceId;
@@ -798,7 +872,7 @@ const App = () => {
                   : 'tap the cell where it belongs'}
             </span>
           </div>
-        ) : locked ? null : (
+        ) : dayDone ? null : (
           <p className="text-white/30 text-[11px] leading-relaxed">
             Compare pieces to the target image, then tap a piece and tap the cell where it belongs.
             {hintsOn && ' The arrow on each piece points to its corner of the picture.'}
@@ -808,6 +882,11 @@ const App = () => {
                 Hard mode: correct pieces are worth 2 points.
               </span>
             )}
+          </p>
+        )}
+        {!dayDone && !completed && pct >= 10 && pct < 60 && (
+          <p className="text-orange-300/50 text-[11px] mt-1.5">
+            Think you know what it is? Call it in the comments.
           </p>
         )}
       </div>
@@ -925,8 +1004,54 @@ const App = () => {
             <div className="text-lg font-bold bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
               {completionMessage}
             </div>
+            <div className="text-amber-300/80 text-xs mt-1.5">
+              +3 bonus points to every contributor
+            </div>
             <div className="text-white/40 text-xs mt-2">
               A new picture drops at midnight — tap to continue
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suggest-a-picture modal */}
+      {showSuggest && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 flex items-center justify-center px-6"
+          onClick={() => setShowSuggest(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#10101e]/95 border border-white/[0.08] rounded-2xl p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-medium mb-1">
+              Suggest a picture
+            </div>
+            <p className="text-white/45 text-xs mb-3 leading-relaxed">
+              What should the community build together? Ideas can become a future daily puzzle.
+            </p>
+            <textarea
+              value={suggestText}
+              onChange={(e) => setSuggestText(e.target.value)}
+              maxLength={280}
+              rows={3}
+              placeholder="e.g. the eclipse everyone watched this week"
+              className="w-full rounded-xl bg-white/[0.05] border border-white/[0.1] text-sm text-white/85 p-3 outline-none focus:border-orange-400/50 resize-none placeholder:text-white/25"
+            />
+            <div className="flex justify-end gap-2 mt-3">
+              <button
+                onClick={() => setShowSuggest(false)}
+                className="text-xs text-white/40 px-3 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void submitSuggestion()}
+                disabled={suggestBusy || !suggestText.trim()}
+                className="text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-400 text-black px-4 py-2 rounded-full disabled:opacity-40"
+              >
+                Submit
+              </button>
             </div>
           </div>
         </div>

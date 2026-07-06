@@ -16,9 +16,9 @@ Placements aren't private — every correct piece locks into a canvas that **eve
 
 1. Look at the full target image shown next to the canvas.
 2. Drag one of your five pieces onto the grid cell where you think it belongs. The cell under your finger highlights before you let go.
-3. **Correct** → the piece locks into the shared canvas for everyone (it sticks!), and you're dealt a new piece. Keep going.
+3. **Correct** → the piece locks into the shared canvas for everyone (it sticks!).
 4. **Wrong** → the piece bounces back to your tray and you burn one of your three tries for the day.
-5. Run out of tries and you're done until the next daily puzzle. The community's goal is to fill the whole canvas before the day ends.
+5. Five pieces is your whole hand for the day — no refills — so no single player can finish the picture alone. When your pieces are placed (or your tries are gone), you're done until the next daily. Finishing the canvas pays **+3 bonus points to every contributor**, and you can share your run to the comments or suggest a picture for a future puzzle while you wait.
 
 **Hints and scoring:** each piece carries a zone hint — a corner arrow (↖ ↗ ↙ ↘) showing which quadrant of the image it belongs in. Hints can be toggled off for a harder game: correct placements are worth **1 point with hints, 2 points if you play the whole day without them**. Making any placement with hints visible forfeits the bonus for the rest of that day.
 

@@ -18,7 +18,11 @@ export type PuzzleDefinition = {
 
 // Date-pinned puzzles override the rotation — use these to tie a specific
 // day's art to a real-world moment.
-export const PUZZLES: PuzzleDefinition[] = [];
+export const PUZZLES: PuzzleDefinition[] = [
+  // World Cup final week — the moment everyone saw.
+  { date: '2026-07-14', title: 'Cup Fever', imageUrl: '/puzzle-004.svg', gridSize: 5 },
+  { date: '2026-07-15', title: 'Cup Fever', imageUrl: '/puzzle-004.svg', gridSize: 5 },
+];
 
 // Days without a pinned puzzle rotate deterministically through this pool,
 // so every player worldwide sees the same picture on the same UTC date.
@@ -29,6 +33,7 @@ export const PUZZLE_POOL: Omit<PuzzleDefinition, 'date'>[] = [
   { title: "Rocket's Return", imageUrl: '/puzzle-001.svg', gridSize: 4 },
   { title: 'Beneath the Waves', imageUrl: '/puzzle-002.svg', gridSize: 5 },
   { title: 'Carnival Nights', imageUrl: '/puzzle-003.svg', gridSize: 5 },
+  { title: 'Cup Fever', imageUrl: '/puzzle-004.svg', gridSize: 5 },
 ];
 
 export function getPuzzleForDate(date: string): PuzzleDefinition {
@@ -54,6 +59,8 @@ export const K = {
   // Set to '1' the first time a user places with hints visible; gates the
   // no-hints 2x scoring bonus for the rest of the day.
   usedHints: (d: string, u: string) => `tbp:${d}:usedhints:${u}`,
+  // Community picture ideas, scored by submission timestamp.
+  suggestions: () => 'tbp:suggestions',
 };
 
 export function getZone(cellIndex: number, gridSize: number): ZoneHint {
@@ -99,6 +106,32 @@ export async function initUserIfNeeded(
   await redis.set(K.hand(date, username), JSON.stringify(pieces));
   await redis.set(K.tries(date, username), '3');
   await redis.set(K.score(date, username), '0');
+}
+
+// Hands are dealt independently, so two players can hold the same cell.
+// When someone else fills a cell you're holding, that piece is dead — swap
+// it for a fresh unfilled cell so the day's five pieces stay playable.
+// Replacements never grow the hand, so the five-a-day cap holds.
+export async function reconcileHand(
+  date: string,
+  username: string,
+  gridSize: number
+): Promise<void> {
+  const handStr = await redis.get(K.hand(date, username));
+  if (!handStr) return;
+  const ids: number[] = JSON.parse(handStr);
+  if (ids.length === 0) return;
+  const raw = await redis.hGetAll(K.canvas(date));
+  const filled = new Set(Object.keys(raw).map(Number));
+  const alive = ids.filter((id) => !filled.has(id));
+  const deadCount = ids.length - alive.length;
+  if (deadCount === 0) return;
+  const aliveSet = new Set(alive);
+  const replacements = (await dealPieces(date, gridSize, deadCount + alive.length)).filter(
+    (id) => !aliveSet.has(id)
+  );
+  const next = [...alive, ...replacements.slice(0, deadCount)];
+  await redis.set(K.hand(date, username), JSON.stringify(next));
 }
 
 export async function getUserHand(
