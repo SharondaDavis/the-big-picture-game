@@ -64,6 +64,10 @@ type PendingPlacement = { cell: number; pieceId: number } | null;
 // drop cell; hit-testing happens where the piece is, not where the finger is.
 const TOUCH_LIFT_PX = 56;
 
+// A press that moves less than this is a tap (select the piece); more is a
+// drag. Both input styles work — tap-then-tap or drag-and-drop.
+const TAP_SLOP_PX = 8;
+
 function ghostTransform(x: number, y: number, scale: number): string {
   return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
 }
@@ -75,6 +79,7 @@ const App = () => {
   const [flash, setFlash] = useState<FlashState>(null);
   const [notif, setNotif] = useState<NotifState>(null);
   const [showLb, setShowLb] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [dragPieceId, setDragPieceId] = useState<number | null>(null);
   const [dragOverCell, setDragOverCell] = useState<number | null>(null);
   const [pending, setPending] = useState<PendingPlacement>(null);
@@ -91,6 +96,16 @@ const App = () => {
   const ghostRef = useRef<HTMLDivElement | null>(null);
   const dragMetaRef = useRef<{ startX: number; startY: number; liftY: number } | null>(null);
   const lastHoverRef = useRef<number | null>(null);
+  // Tracks a press from pointerdown until it resolves into a tap or a drag.
+  const pressRef = useRef<{
+    pieceId: number;
+    startX: number;
+    startY: number;
+    liftY: number;
+    originX: number;
+    originY: number;
+    dragging: boolean;
+  } | null>(null);
 
   const notify = (text: string, kind: 'success' | 'error' | 'info') => {
     if (notifTimer.current) clearTimeout(notifTimer.current);
@@ -228,46 +243,71 @@ const App = () => {
     }, 220);
   }, []);
 
-  const handlePieceDragStart = useCallback(
+  const handlePiecePress = useCallback(
     (e: ReactPointerEvent<HTMLButtonElement>, pieceId: number) => {
       if (placing || !state || state.locked) return;
       e.preventDefault();
       e.currentTarget.setPointerCapture(e.pointerId);
       const rect = e.currentTarget.getBoundingClientRect();
-      const liftY = e.pointerType === 'touch' ? -TOUCH_LIFT_PX : 0;
-      dragOriginRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      dragMetaRef.current = { startX: e.clientX, startY: e.clientY + liftY, liftY };
-      lastHoverRef.current = null;
-      setDragPieceId(pieceId);
+      pressRef.current = {
+        pieceId,
+        startX: e.clientX,
+        startY: e.clientY,
+        liftY: e.pointerType === 'touch' ? -TOUCH_LIFT_PX : 0,
+        originX: rect.left + rect.width / 2,
+        originY: rect.top + rect.height / 2,
+        dragging: false,
+      };
     },
     [placing, state]
   );
 
-  const handlePieceDragMove = useCallback(
-    (e: ReactPointerEvent<HTMLButtonElement>) => {
-      if (dragPieceId === null) return;
-      const meta = dragMetaRef.current;
-      if (!meta) return;
-      const x = e.clientX;
-      const y = e.clientY + meta.liftY;
-      const ghost = ghostRef.current;
-      if (ghost) ghost.style.transform = ghostTransform(x, y, 1.15);
-      // Only touch React state when the hovered cell actually changes.
-      const idx = cellIndexAtPoint(x, y);
-      if (idx !== lastHoverRef.current) {
-        lastHoverRef.current = idx;
-        setDragOverCell(idx);
-      }
-    },
-    [dragPieceId]
-  );
+  const handlePieceMove = useCallback((e: ReactPointerEvent<HTMLButtonElement>) => {
+    const press = pressRef.current;
+    if (!press) return;
 
-  const handlePieceDragEnd = useCallback(
+    if (!press.dragging) {
+      const moved = Math.hypot(e.clientX - press.startX, e.clientY - press.startY);
+      if (moved < TAP_SLOP_PX) return;
+      // The press became a drag: lift the piece and clear any tap-selection.
+      press.dragging = true;
+      dragOriginRef.current = { x: press.originX, y: press.originY };
+      dragMetaRef.current = {
+        startX: e.clientX,
+        startY: e.clientY + press.liftY,
+        liftY: press.liftY,
+      };
+      lastHoverRef.current = null;
+      setSelectedId(null);
+      setDragPieceId(press.pieceId);
+      return;
+    }
+
+    const x = e.clientX;
+    const y = e.clientY + press.liftY;
+    const ghost = ghostRef.current;
+    if (ghost) ghost.style.transform = ghostTransform(x, y, 1.15);
+    // Only touch React state when the hovered cell actually changes.
+    const idx = cellIndexAtPoint(x, y);
+    if (idx !== lastHoverRef.current) {
+      lastHoverRef.current = idx;
+      setDragOverCell(idx);
+    }
+  }, []);
+
+  const handlePieceRelease = useCallback(
     (e: ReactPointerEvent<HTMLButtonElement>) => {
-      if (dragPieceId === null) return;
-      const pieceId = dragPieceId;
-      const liftY = dragMetaRef.current?.liftY ?? 0;
-      const cellIndex = cellIndexAtPoint(e.clientX, e.clientY + liftY);
+      const press = pressRef.current;
+      pressRef.current = null;
+      if (!press) return;
+
+      if (!press.dragging) {
+        // A tap: toggle selection, then place by tapping a cell.
+        setSelectedId((prev) => (prev === press.pieceId ? null : press.pieceId));
+        return;
+      }
+
+      const cellIndex = cellIndexAtPoint(e.clientX, e.clientY + press.liftY);
       const validDrop =
         cellIndex !== null && !!state && !state.canvas[String(cellIndex)] && !state.locked;
 
@@ -275,23 +315,41 @@ const App = () => {
         setDragOverCell(null);
         lastHoverRef.current = null;
         setDragPieceId(null);
-        void commitPlacement(pieceId, cellIndex);
+        void commitPlacement(press.pieceId, cellIndex);
       } else {
         snapBack();
       }
     },
-    [dragPieceId, state, commitPlacement, snapBack]
+    [state, commitPlacement, snapBack]
   );
 
-  const handlePieceDragCancel = useCallback(() => {
-    if (dragPieceId === null) return;
-    snapBack();
-  }, [dragPieceId, snapBack]);
+  const handlePieceCancel = useCallback(() => {
+    const press = pressRef.current;
+    pressRef.current = null;
+    if (press?.dragging) snapBack();
+  }, [snapBack]);
+
+  // Tap-to-place: with a piece selected, tapping an empty cell attempts the
+  // placement there.
+  const handleCellTap = useCallback(
+    (cellIndex: number) => {
+      if (selectedId === null || placing || !state || state.locked) return;
+      if (state.canvas[String(cellIndex)]) {
+        notify("Someone's already there!", 'info');
+        return;
+      }
+      const pieceId = selectedId;
+      setSelectedId(null);
+      void commitPlacement(pieceId, cellIndex);
+    },
+    [selectedId, placing, state, commitPlacement]
+  );
 
   // Dev-only (playtest subreddit): wipe and re-seed today's puzzle state.
   const resetDay = useCallback(async () => {
     if (placing) return;
     setPending(null);
+    setSelectedId(null);
     setDragPieceId(null);
     setDragOverCell(null);
     setFlash(null);
@@ -327,6 +385,8 @@ const App = () => {
   const filledCount = Object.keys(canvas).length;
   const pct = Math.round((filledCount / totalCells) * 100);
   const draggedPiece = dragPieceId !== null ? (hand.find((p) => p.id === dragPieceId) ?? null) : null;
+  const selectedPiece = selectedId !== null ? (hand.find((p) => p.id === selectedId) ?? null) : null;
+  const activePiece = draggedPiece ?? selectedPiece;
 
   // The canvas is the hero (bigger drop targets); the target image is a
   // smaller reference beside it. Sized off the real viewport, capped for
@@ -446,6 +506,7 @@ const App = () => {
               const filled = !!canvas[String(i)];
               const isFlashing = flash?.cell === i;
               const isDragTarget = !filled && !locked && dragPieceId !== null && dragOverCell === i;
+              const canTap = !filled && !locked && selectedId !== null;
 
               // Double-tone inset ring so the grid line reads against both
               // light and dark regions of the target image.
@@ -488,6 +549,7 @@ const App = () => {
                 <div
                   key={i}
                   data-cell-index={i}
+                  onClick={() => handleCellTap(i)}
                   className={`transition-all duration-150 relative ${
                     isFlashing
                       ? flash?.kind === 'wrong'
@@ -495,9 +557,11 @@ const App = () => {
                         : 'bg-gray-400/40'
                       : isDragTarget
                         ? 'bg-orange-400/50'
-                        : dragPieceId !== null && !locked
-                          ? 'bg-orange-400/10'
-                          : 'bg-white/5'
+                        : canTap
+                          ? 'bg-orange-400/15 hover:bg-orange-400/40 cursor-pointer'
+                          : dragPieceId !== null && !locked
+                            ? 'bg-orange-400/10'
+                            : 'bg-white/5'
                   }`}
                   style={{
                     width: CELL_SIZE,
@@ -529,7 +593,7 @@ const App = () => {
       {/* Hand */}
       <div className="px-3 pt-4">
         <div className="text-xs text-white/40 uppercase tracking-widest mb-2">
-          Your pieces {locked ? '(locked)' : '— drag onto the canvas'}
+          Your pieces {locked ? '(locked)' : '— tap to select, or drag'}
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           {hand.length === 0 && !locked && (
@@ -538,22 +602,25 @@ const App = () => {
           {hand.map((piece) => {
             const isDragging = piece.id === dragPieceId;
             const isPending = piece.id === pending?.pieceId;
+            const isSelected = piece.id === selectedId;
             const justReturned = piece.id === returnedPieceId;
             return (
               <button
                 key={piece.id}
                 disabled={locked}
-                onPointerDown={(e) => handlePieceDragStart(e, piece.id)}
-                onPointerMove={handlePieceDragMove}
-                onPointerUp={handlePieceDragEnd}
-                onPointerCancel={handlePieceDragCancel}
+                onPointerDown={(e) => handlePiecePress(e, piece.id)}
+                onPointerMove={handlePieceMove}
+                onPointerUp={handlePieceRelease}
+                onPointerCancel={handlePieceCancel}
                 className={`relative rounded-lg border-2 transition-all duration-150 overflow-hidden touch-none ${
                   isDragging || isPending
                     ? 'border-orange-400/40 opacity-30'
-                    : justReturned
-                      ? 'border-red-400 piece-returned'
-                      : 'border-white/20 hover:border-white/50 active:scale-95'
-                } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'}`}
+                    : isSelected
+                      ? 'border-orange-400 ring-2 ring-orange-400/50 scale-105'
+                      : justReturned
+                        ? 'border-red-400 piece-returned'
+                        : 'border-white/20 hover:border-white/50 active:scale-95'
+                } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                 style={pieceStyle(piece.id, gridSize, imageUrl, 68)}
               >
                 {hintsOn && (
@@ -569,20 +636,26 @@ const App = () => {
 
       {/* Zone hint / instruction */}
       <div className="px-3 pt-3 pb-4 min-h-[36px]">
-        {draggedPiece ? (
+        {activePiece ? (
           <div className="flex items-center gap-2 text-sm">
             {hintsOn && (
               <span className="bg-orange-400/20 text-orange-300 px-2 py-0.5 rounded text-xs font-semibold">
-                {ZONE_ARROW[draggedPiece.zone]} {ZONE_LABEL[draggedPiece.zone]}
+                {ZONE_ARROW[activePiece.zone]} {ZONE_LABEL[activePiece.zone]}
               </span>
             )}
             <span className="text-white/50">
-              {hintsOn ? '→ drop it in that corner of the canvas' : 'Drop it where it belongs'}
+              {draggedPiece
+                ? hintsOn
+                  ? '→ drop it in that corner of the canvas'
+                  : 'Drop it where it belongs'
+                : hintsOn
+                  ? '→ tap the cell in that corner of the canvas'
+                  : 'Tap the cell where it belongs'}
             </span>
           </div>
         ) : locked ? null : (
           <p className="text-white/30 text-xs">
-            Compare pieces to the target image, then drag a piece onto the cell where it belongs.
+            Compare pieces to the target image, then tap a piece and tap the cell where it belongs.
             {hintsOn && ' The arrow on each piece points to its corner of the picture.'}
             {bonusLive && (
               <span className="text-orange-300/80">
