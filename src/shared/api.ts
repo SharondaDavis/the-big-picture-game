@@ -33,6 +33,8 @@ export type GameStateResponse = {
   usedHints: boolean;
   /** True only on the dev playtest subreddit; enables dev-only UI like the day reset. */
   playtest: boolean;
+  /** Unique players who placed at least one piece today. */
+  contributors: number;
 };
 
 export type PlaceRequest = {

@@ -15,6 +15,7 @@ import {
   getUserHand,
   initUserIfNeeded,
   reconcileHand,
+  dealPieces,
   getLeaderboard,
   updateStreak,
   seedCanvas,
@@ -42,17 +43,27 @@ api.get('/game-state', async (c) => {
   await initUserIfNeeded(today, username, puzzle.gridSize);
   await reconcileHand(today, username, puzzle.gridSize);
 
-  const [canvas, hand, triesStr, scoreStr, streakStr, leaderboard, completeStr, usedHintsStr] =
-    await Promise.all([
-      getCanvas(today),
-      getUserHand(today, username, puzzle.gridSize),
-      redis.get(K.tries(today, username)),
-      redis.get(K.score(today, username)),
-      redis.get(K.streak(username)),
-      getLeaderboard(today),
-      redis.get(K.complete(today)),
-      redis.get(K.usedHints(today, username)),
-    ]);
+  const [
+    canvas,
+    hand,
+    triesStr,
+    scoreStr,
+    streakStr,
+    leaderboard,
+    completeStr,
+    usedHintsStr,
+    contributors,
+  ] = await Promise.all([
+    getCanvas(today),
+    getUserHand(today, username, puzzle.gridSize),
+    redis.get(K.tries(today, username)),
+    redis.get(K.score(today, username)),
+    redis.get(K.streak(username)),
+    getLeaderboard(today),
+    redis.get(K.complete(today)),
+    redis.get(K.usedHints(today, username)),
+    redis.zCard(K.lb(today)),
+  ]);
 
   const rawTriesLeft = triesStr !== undefined ? parseInt(triesStr) : 3;
   const triesLeft = isPlaytest() ? PLAYTEST_TRIES : rawTriesLeft;
@@ -80,6 +91,7 @@ api.get('/game-state', async (c) => {
     username,
     usedHints: usedHintsStr === '1',
     playtest: isPlaytest(),
+    contributors,
   });
 });
 
@@ -180,8 +192,15 @@ api.post('/place', async (c) => {
     await redis.hSet(K.canvas(today), { [String(cellIndex)]: '1' });
 
     // No refill: five pieces a day is the whole hand, so no single player
-    // can run the board — the community is structurally required.
+    // can run the board — the community is structurally required. Playtest
+    // keeps refilling so a solo tester can reach completion for demos.
     const updatedHandIds = handIds.filter((id) => id !== pieceId);
+    if (isPlaytest()) {
+      const refill = await dealPieces(today, gridSize, 1);
+      for (const id of refill) {
+        if (!updatedHandIds.includes(id)) updatedHandIds.push(id);
+      }
+    }
     await redis.set(K.hand(today, username), JSON.stringify(updatedHandIds));
 
     const pointsEarned = usedHints ? 1 : 2;

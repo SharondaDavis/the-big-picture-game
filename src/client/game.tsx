@@ -189,7 +189,9 @@ const App = () => {
 
   // Tick the next-puzzle countdown, but only while the day-summary card is
   // showing (out of tries or out of pieces) — no idle timers during play.
-  const dayDoneNow = state ? state.locked || state.hand.length === 0 : false;
+  const dayDoneNow = state
+    ? state.locked || state.hand.length === 0 || state.completed
+    : false;
   useEffect(() => {
     if (!dayDoneNow) return;
     const id = setInterval(() => setNowMs(Date.now()), 1000);
@@ -501,19 +503,22 @@ const App = () => {
   const selectedPiece = selectedId !== null ? (hand.find((p) => p.id === selectedId) ?? null) : null;
   const activePiece = draggedPiece ?? selectedPiece;
   const myRank = leaderboard.findIndex((e) => e.username === state.username);
-  const dayDone = locked || hand.length === 0;
+  const dayDone = locked || hand.length === 0 || completed;
   const dayNumber = Math.floor(Date.parse(`${puzzle.date}T00:00:00Z`) / 86_400_000);
   const completionMessage = COMPLETION_MESSAGES[dayNumber % COMPLETION_MESSAGES.length]!;
 
   // The canvas is the hero (bigger drop targets); the target image is a
-  // smaller reference beside it. Sized off the real viewport, capped for
-  // desktop.
-  const contentW = Math.min(viewportW, 448) - 24 /* page padding */ - 12 /* column gap */;
+  // smaller reference beside it. Derived subtractively from the real frame
+  // width — image first, then cells get exactly what's left — so the row
+  // can never overflow the viewport.
+  const frameW = Math.min(viewportW, 448) - 32; /* px-4 both sides */
+  const IMG_SIZE = Math.min(Math.floor(frameW * 0.34), 150);
   const CELL_SIZE = Math.min(
-    Math.floor((contentW * 0.62 - (gridSize - 1) * 2) / gridSize),
+    Math.floor((frameW - IMG_SIZE - 12 /* gap */ - (gridSize - 1) * 2 - 2) / gridSize),
     64
   );
-  const IMG_SIZE = Math.min(Math.floor(contentW * 0.36), 160);
+  // Completed state drops the target panel, so the canvas gets full width.
+  const HERO_CELL = Math.min(Math.floor((frameW - (gridSize - 1) * 2 - 2) / gridSize), 76);
 
   return (
     <div className="flex flex-col min-h-screen app-bg text-white select-none">
@@ -575,25 +580,68 @@ const App = () => {
         </div>
       )}
 
-      {/* Completion banner */}
+      {/* Tier 1 when complete: the finished picture is the star */}
       {completed && (
-        <div className="mx-4 mt-3 rounded-xl border border-amber-300/25 bg-gradient-to-r from-orange-500/[0.12] to-amber-300/[0.06] text-amber-200/90 text-center py-2 text-xs font-medium tracking-wide">
-          The community assembled it — bonus unlocked for all contributors
+        <div className="flex flex-col items-center px-4 pt-5">
+          <div className="text-[10px] uppercase tracking-[0.35em] bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent font-bold">
+            Picture complete
+          </div>
+          <div className="text-white/45 text-xs mt-1">
+            {state.contributors > 1
+              ? `${state.contributors} Redditors built today's picture — +3 to every contributor`
+              : 'Bonus unlocked for every contributor'}
+          </div>
+          <div
+            className="grid rounded-2xl overflow-hidden border border-amber-300/25 shadow-[0_0_44px_rgba(251,146,60,0.16)] mt-3"
+            style={{
+              gridTemplateColumns: `repeat(${gridSize}, ${HERO_CELL}px)`,
+              gridTemplateRows: `repeat(${gridSize}, ${HERO_CELL}px)`,
+              gap: 2,
+              background: 'rgba(0,0,0,0.35)',
+            }}
+          >
+            {Array.from({ length: totalCells }, (_, i) => (
+              <div key={i} style={pieceStyle(i, gridSize, imageUrl, HERO_CELL)} />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Day summary card (out of tries or out of pieces) */}
-      {dayDone && (
+      {/* Tier 2 when complete: one quiet supporting strip */}
+      {completed && (
+        <div className="mx-4 mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+          <div className="flex items-center justify-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-white/45 tabular-nums">
+            <span className="text-orange-300 font-medium">{score} pts</span>
+            {myRank >= 0 && <span>rank #{myRank + 1}</span>}
+            {streak > 0 && <span>{streak}d streak</span>}
+            <span>next picture in {formatCountdown(msUntilNextUtcMidnight(nowMs))}</span>
+          </div>
+          <div className="flex justify-center gap-2 mt-2.5">
+            <button
+              onClick={() => void shareRun()}
+              disabled={sharing || shareDone}
+              className="text-[11px] font-bold bg-gradient-to-r from-orange-500 to-amber-400 text-black px-4 py-1.5 rounded-full transition-transform active:scale-95 disabled:opacity-50"
+            >
+              {shareDone ? 'Shared ✓' : 'Share my run'}
+            </button>
+            <button
+              onClick={() => setShowSuggest(true)}
+              className="text-[11px] text-white/60 border border-white/[0.12] px-4 py-1.5 rounded-full hover:text-white/90 transition-colors"
+            >
+              Suggest a picture
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Day summary card (out of tries or out of pieces, picture unfinished) */}
+      {dayDone && !completed && (
         <div className="mx-4 mt-3 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-center">
           <div className="text-[9px] uppercase tracking-[0.25em] text-white/35 mb-1">
             Today's run
           </div>
           <div className="text-sm font-bold text-white/85 mb-3">
-            {locked
-              ? 'Out of tries'
-              : filledCount >= totalCells
-                ? 'Picture complete'
-                : 'Your part is done'}
+            {locked ? 'Out of tries' : 'Your part is done'}
           </div>
           <div className="flex justify-center gap-6 mb-3 tabular-nums">
             <div>
@@ -642,7 +690,9 @@ const App = () => {
         </div>
       )}
 
-      {/* Main: reference image + hero canvas */}
+      {/* Main: reference image + hero canvas (hidden once complete — the
+          Tier-1 block above owns the finished picture) */}
+      {!completed && (
       <div className="flex gap-3 px-4 pt-4 justify-center items-start">
         {/* Target image */}
         <div className="flex flex-col gap-1.5">
@@ -744,8 +794,10 @@ const App = () => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Stats + progress */}
+      {!completed && (
       <div className="px-4 pt-4">
         <div className="flex items-center justify-between text-[11px] mb-1.5">
           <span className="text-white/40 tabular-nums">
@@ -763,6 +815,7 @@ const App = () => {
           />
         </div>
       </div>
+      )}
 
       {/* Always-visible top 3 — tap for the full board */}
       {leaderboard.length > 0 && (
@@ -794,6 +847,7 @@ const App = () => {
       )}
 
       {/* Hand */}
+      {!completed && (
       <div className="mx-4 mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-[9px] text-white/35 uppercase tracking-[0.2em]">
@@ -852,8 +906,10 @@ const App = () => {
           })}
         </div>
       </div>
+      )}
 
       {/* Zone hint / instruction */}
+      {!completed && (
       <div className="px-4 pt-3 pb-5 min-h-[36px]">
         {activePiece ? (
           <div className="flex items-center gap-2 text-xs">
@@ -884,12 +940,13 @@ const App = () => {
             )}
           </p>
         )}
-        {!dayDone && !completed && pct >= 10 && pct < 60 && (
+        {!dayDone && pct >= 10 && pct < 60 && (
           <p className="text-orange-300/50 text-[11px] mt-1.5">
             Think you know what it is? Call it in the comments.
           </p>
         )}
       </div>
+      )}
 
       {/* Leaderboard drawer */}
       {showLb && (
