@@ -1,6 +1,9 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
   "name": "bigpicture-game",
+  "marketingAssets": {
+    "icon": "assets/profile-pic.png"
+  },
   "post": {
     "dir": "dist/client",
     "entrypoints": {
