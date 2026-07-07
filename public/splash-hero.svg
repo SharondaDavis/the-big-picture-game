@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="42%" r="70%">
+      <stop offset="0%" stop-color="#1c2447"/>
+      <stop offset="55%" stop-color="#10142e"/>
+      <stop offset="100%" stop-color="#080a18"/>
+    </radialGradient>
+    <radialGradient id="energy" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd66b" stop-opacity="0.55"/>
+      <stop offset="45%" stop-color="#fb923c" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tileFrame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b3157"/>
+      <stop offset="100%" stop-color="#1a1e3c"/>
+    </linearGradient>
+    <linearGradient id="snapTile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff8a3c"/>
+      <stop offset="100%" stop-color="#e2574c"/>
+    </linearGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd66b" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffd66b" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Backdrop -->
+  <rect width="1024" height="1024" fill="url(#bgGlow)"/>
+  <circle cx="512" cy="480" r="430" fill="url(#energy)"/>
+
+  <!-- Ambient sparks -->
+  <g fill="#ffd66b" filter="url(#softGlow)">
+    <circle cx="150" cy="180" r="6"/><circle cx="880" cy="240" r="8"/><circle cx="120" cy="720" r="7"/>
+    <circle cx="900" cy="760" r="6"/><circle cx="230" cy="90" r="4"/><circle cx="800" cy="120" r="5"/>
+  </g>
+  <g fill="#7fe0ff" filter="url(#softGlow)">
+    <circle cx="90" cy="420" r="5"/><circle cx="940" cy="500" r="6"/><circle cx="760" cy="880" r="5"/>
+    <circle cx="300" cy="900" r="6"/>
+  </g>
+
+  <!-- Corner energy arcs -->
+  <g stroke="#7fe0ff" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.7" filter="url(#softGlow)">
+    <path d="M96 300 Q 60 250 110 210"/>
+    <path d="M930 340 Q 975 300 935 250"/>
+    <path d="M140 810 Q 95 780 125 730"/>
+  </g>
+
+  <!-- Puzzle board, slight tilt -->
+  <g transform="translate(512 530) rotate(-4)">
+    <!-- Board frame -->
+    <rect x="-330" y="-330" width="660" height="660" rx="48" fill="url(#tileFrame)" stroke="#3a4270" stroke-width="6"/>
+    <rect x="-306" y="-306" width="612" height="612" rx="32" fill="#0d1026"/>
+
+    <!-- Filled tiles (3x3, 200px cells with 6px gutters at -300..300) -->
+    <!-- Row 1 -->
+    <g>
+      <rect x="-300" y="-300" width="196" height="196" rx="18" fill="#33406e"/>
+      <circle cx="-202" cy="-202" r="56" fill="#ffd66b"/>
+      <circle cx="-222" cy="-222" r="14" fill="#ffe9a8"/>
+    </g>
+    <g>
+      <rect x="-98" y="-300" width="196" height="196" rx="18" fill="#2c3862"/>
+      <path d="M-70 -132 L-20 -212 L20 -160 L48 -196 L70 -132 Z" fill="#7fd4c1"/>
+      <circle cx="42" cy="-252" r="16" fill="#e8f4ff"/>
+    </g>
+    <g>
+      <rect x="104" y="-300" width="196" height="196" rx="18" fill="#33406e"/>
+      <path d="M124 -160 Q 152 -200 180 -160 T 236 -160 T 292 -160 L 292 -124 L 124 -124 Z" fill="#4a7fe8"/>
+      <circle cx="256" cy="-244" r="22" fill="#ffe9a8"/>
+    </g>
+    <!-- Row 2 -->
+    <g>
+      <rect x="-300" y="-98" width="196" height="196" rx="18" fill="#2c3862"/>
+      <path d="M-202 -70 L-160 -2 L-202 30 L-244 -2 Z" fill="#e86ba7"/>
+      <circle cx="-202" cy="-2" r="12" fill="#ffd6ec"/>
+    </g>
+    <g>
+      <rect x="-98" y="-98" width="196" height="196" rx="18" fill="#e2574c"/>
+      <path d="M0 -64 L44 8 L18 8 L18 62 L-18 62 L-18 8 L-44 8 Z" fill="#ffd66b"/>
+    </g>
+    <g>
+      <rect x="104" y="-98" width="196" height="196" rx="18" fill="#33406e"/>
+      <path d="M136 62 L166 -20 L196 30 L226 -50 L268 62 Z" fill="#2e9f5e"/>
+      <circle cx="150" cy="-56" r="14" fill="#ffe9a8"/>
+    </g>
+    <!-- Row 3 -->
+    <g>
+      <rect x="-300" y="104" width="196" height="196" rx="18" fill="#2e9f5e"/>
+      <path d="M-300 220 Q -252 170 -202 220 T -104 220 L -104 300 L -300 300 Z" fill="#25814c"/>
+    </g>
+    <g>
+      <rect x="-98" y="104" width="196" height="196" rx="18" fill="#4a7fe8"/>
+      <path d="M-60 240 L0 140 L60 240 Z" fill="#e8f4ff"/>
+    </g>
+
+    <!-- The empty slot, electric and waiting -->
+    <g>
+      <rect x="104" y="104" width="196" height="196" rx="18" fill="#0a0c1e" stroke="#ffd66b" stroke-width="5" stroke-dasharray="18 12" filter="url(#softGlow)"/>
+      <rect x="104" y="104" width="196" height="196" rx="18" fill="#ffd66b" opacity="0.10"/>
+    </g>
+  </g>
+
+  <!-- The final piece, flying in with an energy trail -->
+  <g>
+    <path d="M905 118 L716 320 L820 350 Z" fill="url(#trail)" opacity="0.6"/>
+    <path d="M940 190 L750 360 L830 390 Z" fill="url(#trail)" opacity="0.4"/>
+    <g transform="translate(725 372) rotate(14)" filter="url(#glow)">
+      <rect x="-98" y="-98" width="196" height="196" rx="18" fill="url(#snapTile)" stroke="#ffe9a8" stroke-width="6"/>
+      <circle cx="0" cy="-16" r="44" fill="#ffd66b"/>
+      <circle cx="-16" cy="-24" r="6" fill="#b4571e"/>
+      <circle cx="16" cy="-24" r="6" fill="#b4571e"/>
+      <path d="M-40 42 Q 0 82 40 42" stroke="#ffe9a8" stroke-width="10" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- Lightning bolts around the action -->
+  <g fill="#7fe0ff" filter="url(#glow)">
+    <path d="M652 240 L610 318 L646 314 L590 400 L668 316 L630 320 Z"/>
+    <path d="M880 470 L850 520 L874 518 L838 578 L892 520 L866 522 Z" opacity="0.9"/>
+  </g>
+  <g fill="#ffd66b" filter="url(#glow)">
+    <path d="M600 480 L578 520 L596 518 L568 566 L610 520 L590 522 Z" opacity="0.9"/>
+  </g>
+
+  <!-- Impact sparks near the empty slot -->
+  <g stroke="#ffe9a8" stroke-width="6" stroke-linecap="round" filter="url(#softGlow)">
+    <line x1="668" y1="618" x2="692" y2="594"/>
+    <line x1="700" y1="660" x2="732" y2="652"/>
+    <line x1="648" y1="676" x2="668" y2="700"/>
+  </g>
+</svg>

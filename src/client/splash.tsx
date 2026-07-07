@@ -5,7 +5,12 @@ import { context, requestExpandedMode } from '@devvit/web/client';
 
 const Splash = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen app-bg text-white px-6 gap-5">
+    <div className="flex flex-col items-center justify-center min-h-screen app-bg text-white px-6 gap-4">
+      <img
+        src="/splash-hero.svg"
+        alt="A puzzle piece snapping into the community canvas"
+        className="w-32 h-32 rounded-3xl shadow-[0_0_44px_rgba(251,146,60,0.22)]"
+      />
       <div className="text-center">
         <p className="text-[9px] text-white/30 uppercase tracking-[0.35em] mb-2">Daily communal puzzle</p>
         <h1 className="text-3xl font-black tracking-tight uppercase bg-gradient-to-r from-orange-400 via-amber-300 to-orange-400 bg-clip-text text-transparent">
