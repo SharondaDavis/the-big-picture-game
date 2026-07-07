@@ -29,10 +29,13 @@ export const PUZZLES: PuzzleDefinition[] = [
 // Grid scales with the art's intricacy: bolder pictures get fewer, larger
 // tiles; detailed scenes get more pieces so more players can hold a full
 // hand. Keep gridSize ≤ 5 until the crowd is big enough to finish more.
+//
+// Rotation favours mature, zeitgeist scenes — the moments Reddit is talking
+// about (eclipse chasing, aurora season, the World Cup). The earlier playful
+// art (puzzle-001..003) stays in public/ for themed days via PUZZLES pins.
 export const PUZZLE_POOL: Omit<PuzzleDefinition, 'date'>[] = [
-  { title: "Rocket's Return", imageUrl: '/puzzle-001.svg', gridSize: 4 },
-  { title: 'Beneath the Waves', imageUrl: '/puzzle-002.svg', gridSize: 5 },
-  { title: 'Carnival Nights', imageUrl: '/puzzle-003.svg', gridSize: 5 },
+  { title: 'Totality', imageUrl: '/puzzle-005.svg', gridSize: 5 },
+  { title: 'Aurora Watch', imageUrl: '/puzzle-006.svg', gridSize: 5 },
   { title: 'Cup Fever', imageUrl: '/puzzle-004.svg', gridSize: 5 },
 ];
 

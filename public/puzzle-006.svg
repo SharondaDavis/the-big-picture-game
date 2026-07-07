@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="aSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#040810"/>
+      <stop offset="60%" stop-color="#081426"/>
+      <stop offset="100%" stop-color="#0e2438"/>
+    </linearGradient>
+    <linearGradient id="curtainA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#37e6a0" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#37e6a0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0fae72" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="curtainB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8f6be8" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#8f6be8" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#5a3fae" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="aLake" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0c2033"/>
+      <stop offset="100%" stop-color="#050d18"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="400" height="400" fill="url(#aSky)"/>
+
+  <!-- Aurora curtains, sweeping diagonally -->
+  <g>
+    <path d="M-10 30 C 40 130 20 180 70 244 L 108 236 C 66 170 92 120 52 18 Z" fill="url(#curtainA)"/>
+    <path d="M70 8 C 120 110 104 168 150 236 L 184 228 C 146 160 168 104 128 -6 Z" fill="url(#curtainA)" opacity="0.85"/>
+    <path d="M160 -8 C 204 96 192 160 232 226 L 262 220 C 228 154 244 92 210 -14 Z" fill="url(#curtainB)"/>
+    <path d="M240 -12 C 286 88 274 150 312 214 L 340 208 C 308 148 320 84 288 -16 Z" fill="url(#curtainA)" opacity="0.7"/>
+    <path d="M318 -10 C 356 76 350 136 384 196 L 400 190 L 400 60 C 380 40 362 12 352 -14 Z" fill="url(#curtainB)" opacity="0.8"/>
+  </g>
+
+  <!-- Big Dipper (top-left landmark) -->
+  <g fill="#e8f2ff">
+    <circle cx="30" cy="44" r="2"/><circle cx="52" cy="52" r="2"/><circle cx="74" cy="52" r="2"/>
+    <circle cx="94" cy="42" r="2"/><circle cx="112" cy="56" r="2"/><circle cx="108" cy="80" r="2"/>
+    <circle cx="86" cy="78" r="2"/>
+  </g>
+  <g stroke="#e8f2ff" stroke-width="0.8" opacity="0.35" fill="none">
+    <path d="M30 44 L52 52 L74 52 L94 42 L112 56 L108 80 L86 78 L94 42"/>
+  </g>
+
+  <!-- Shooting star (top-right landmark) -->
+  <line x1="330" y1="36" x2="376" y2="22" stroke="#e8f2ff" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="376" cy="22" r="2.2" fill="#ffffff"/>
+
+  <!-- Scattered stars -->
+  <g fill="#c8dcf4">
+    <circle cx="152" cy="36" r="1.2"/><circle cx="196" cy="64" r="1"/><circle cx="228" cy="30" r="1.3"/>
+    <circle cx="298" cy="70" r="1"/><circle cx="360" cy="110" r="1.2"/><circle cx="20" cy="120" r="1"/>
+    <circle cx="170" cy="120" r="1"/><circle cx="252" cy="104" r="1.1"/>
+  </g>
+
+  <!-- Mountain range -->
+  <path d="M0 246 L58 176 L102 232 L158 162 L216 240 L268 186 L318 238 L364 200 L400 232 L400 292 L0 292 Z" fill="#0a1522"/>
+  <!-- Snow caps -->
+  <g fill="#b8d4e8" opacity="0.85">
+    <path d="M58 176 L70 192 L58 190 L46 194 Z"/>
+    <path d="M158 162 L172 182 L158 178 L144 184 Z"/>
+    <path d="M268 186 L279 200 L268 197 L257 202 Z"/>
+  </g>
+
+  <!-- Pine treeline -->
+  <g fill="#071019">
+    <path d="M20 292 L30 258 L40 292 Z"/><path d="M42 292 L52 264 L62 292 Z"/>
+    <path d="M330 292 L340 260 L350 292 Z"/><path d="M352 292 L362 266 L372 292 Z"/>
+    <path d="M300 292 L308 268 L316 292 Z"/>
+  </g>
+
+  <!-- Cabin with warm window (mid-left landmark) -->
+  <g transform="translate(96 268)">
+    <rect x="-26" y="-2" width="52" height="26" fill="#160f14"/>
+    <path d="M-32 -2 L0 -24 L32 -2 Z" fill="#1e1119"/>
+    <rect x="6" y="6" width="12" height="11" fill="#ffb84d"/>
+    <rect x="11" y="6" width="2" height="11" fill="#160f14"/>
+    <rect x="6" y="11" width="12" height="2" fill="#160f14"/>
+    <rect x="14" y="-18" width="7" height="14" fill="#160f14"/>
+    <path d="M17 -22 q4 -8 1 -14" stroke="#9fb4c4" stroke-width="2.4" fill="none" opacity="0.5" stroke-linecap="round"/>
+  </g>
+  <!-- Window light spilling onto snow -->
+  <path d="M102 294 L124 294 L134 306 L96 306 Z" fill="#ffb84d" opacity="0.18"/>
+
+  <!-- Lake with aurora reflection -->
+  <rect x="0" y="292" width="400" height="108" fill="url(#aLake)"/>
+  <g opacity="0.5">
+    <path d="M60 300 C 70 330 66 352 76 386 L 92 382 C 82 350 88 328 78 298 Z" fill="url(#curtainA)"/>
+    <path d="M216 300 C 226 328 222 350 232 380 L 246 376 C 236 348 242 326 232 298 Z" fill="url(#curtainB)"/>
+    <path d="M300 298 C 310 324 306 344 314 372 L 328 368 C 318 342 324 322 314 296 Z" fill="url(#curtainA)" opacity="0.8"/>
+  </g>
+  <g stroke-linecap="round" opacity="0.5">
+    <line x1="30" y1="316" x2="66" y2="316" stroke="#37e6a0" stroke-width="1.6"/>
+    <line x1="150" y1="330" x2="186" y2="330" stroke="#8f6be8" stroke-width="1.4"/>
+    <line x1="256" y1="312" x2="292" y2="312" stroke="#37e6a0" stroke-width="1.4"/>
+    <line x1="340" y1="338" x2="372" y2="338" stroke="#b8d4e8" stroke-width="1.2"/>
+    <line x1="90" y1="352" x2="118" y2="352" stroke="#b8d4e8" stroke-width="1.2" opacity="0.6"/>
+  </g>
+
+  <!-- Rocky shore (bottom edge) -->
+  <path d="M0 400 L0 376 Q 60 364 130 378 T 280 374 T 400 380 L 400 400 Z" fill="#060b12"/>
+
+  <!-- Photographer with tripod (bottom-right landmark) -->
+  <g transform="translate(322 366)">
+    <g stroke="#03060b" stroke-width="3" stroke-linecap="round">
+      <line x1="0" y1="-14" x2="-10" y2="10"/>
+      <line x1="0" y1="-14" x2="10" y2="10"/>
+      <line x1="0" y1="-14" x2="0" y2="9"/>
+    </g>
+    <rect x="-7" y="-22" width="14" height="9" rx="2" fill="#03060b"/>
+    <circle cx="9" cy="-17" r="3" fill="#03060b"/>
+    <!-- The photographer, hands in pockets, looking up -->
+    <circle cx="-24" cy="-26" r="5" fill="#03060b"/>
+    <rect x="-29" y="-22" width="10" height="22" rx="4" fill="#03060b"/>
+    <!-- Phone glow on their face -->
+    <circle cx="-21" cy="-25" r="2" fill="#37e6a0" opacity="0.35"/>
+  </g>
+
+  <!-- Canoe pulled ashore (bottom-left landmark) -->
+  <g transform="translate(66 382)">
+    <path d="M-30 0 Q 0 12 30 0 Q 16 6 0 6 Q -16 6 -30 0 Z" fill="#101820"/>
+    <path d="M-30 0 Q 0 -4 30 0" stroke="#1c2a36" stroke-width="2" fill="none"/>
+  </g>
+</svg>

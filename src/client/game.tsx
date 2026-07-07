@@ -65,8 +65,9 @@ type PendingPlacement = { cell: number; pieceId: number } | null;
 const TOUCH_LIFT_PX = 56;
 
 // A press that moves less than this is a tap (select the piece); more is a
-// drag. Both input styles work — tap-then-tap or drag-and-drop.
-const TAP_SLOP_PX = 8;
+// drag. Both input styles work — tap-then-tap or drag-and-drop. Generous
+// because thumbs wobble: a tap that silently becomes a 9px drag feels broken.
+const TAP_SLOP_PX = 14;
 
 function ghostTransform(x: number, y: number, scale: number): string {
   return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
@@ -136,6 +137,7 @@ const App = () => {
   const [showSuggest, setShowSuggest] = useState(false);
   const [suggestText, setSuggestText] = useState('');
   const [suggestBusy, setSuggestBusy] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const prevCompletedRef = useRef<boolean | null>(null);
   const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragOriginRef = useRef<DragPos | null>(null);
@@ -170,8 +172,23 @@ const App = () => {
       .then((data: GameStateResponse) => {
         setState(data);
         setLoading(false);
+        // First visit: a five-second how-to before the board.
+        try {
+          if (!localStorage.getItem('tbp_tutorial_v1')) setShowTutorial(true);
+        } catch {
+          // Storage unavailable in some webviews — skip the auto-tutorial.
+        }
       })
       .catch(() => setLoading(false));
+  }, []);
+
+  const dismissTutorial = useCallback(() => {
+    setShowTutorial(false);
+    try {
+      localStorage.setItem('tbp_tutorial_v1', '1');
+    } catch {
+      // Best effort only.
+    }
   }, []);
 
   useEffect(() => {
@@ -541,6 +558,13 @@ const App = () => {
             title="Zone hints show which corner of the picture each piece belongs in. Play all day without them for double points."
           >
             {hintsOn ? 'HINTS ON' : bonusLive ? 'HINTS OFF · 2×' : 'HINTS OFF'}
+          </button>
+          <button
+            onClick={() => setShowTutorial(true)}
+            className="w-[26px] h-[26px] rounded-full border border-white/[0.12] text-white/50 hover:text-white hover:border-white/30 transition-colors text-[11px] font-bold"
+            title="How to play"
+          >
+            ?
           </button>
           <button
             onClick={() => setShowLb((v) => !v)}
@@ -1067,6 +1091,62 @@ const App = () => {
             <div className="text-white/40 text-xs mt-2">
               A new picture drops at midnight — tap to continue
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* First-time tutorial */}
+      {showTutorial && (
+        <div className="fixed inset-0 z-40 bg-[#06060f]/95 backdrop-blur-sm flex items-center justify-center px-6">
+          <div className="w-full max-w-sm rounded-2xl border border-white/[0.08] bg-[#10101e] p-5">
+            <div className="text-center mb-5">
+              <div className="text-[9px] uppercase tracking-[0.3em] text-white/35 mb-1">
+                How to play
+              </div>
+              <div className="text-lg font-black uppercase tracking-tight bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+                The Big Picture
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 text-[13px] text-white/70 leading-snug">
+              <div className="flex items-center gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-orange-400/15 border border-orange-400/40 text-orange-300 text-[11px] font-bold flex items-center justify-center">
+                  1
+                </span>
+                <span>
+                  One picture a day, built by the whole community. The target image shows what
+                  you're all making.
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-orange-400/15 border border-orange-400/40 text-orange-300 text-[11px] font-bold flex items-center justify-center">
+                  2
+                </span>
+                <span className="flex items-center gap-2 flex-wrap">
+                  <span>Tap a piece,</span>
+                  <span className="inline-block w-5 h-5 rounded border-2 border-orange-400 bg-orange-400/30 align-middle" />
+                  <span>then tap its cell.</span>
+                  <span className="inline-block w-5 h-5 rounded border border-dashed border-white/40 align-middle" />
+                  <span>Right = it sticks for everyone.</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-orange-400/15 border border-orange-400/40 text-orange-300 text-[11px] font-bold flex items-center justify-center">
+                  3
+                </span>
+                <span>
+                  Wrong spot costs a try — you get 3 a day and 5 pieces. Nobody can finish
+                  alone, so every piece counts.
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={dismissTutorial}
+              className="w-full mt-5 bg-gradient-to-r from-orange-500 to-amber-400 text-black font-bold text-sm py-2.5 rounded-full transition-transform active:scale-95"
+            >
+              Let's play
+            </button>
           </div>
         </div>
       )}
