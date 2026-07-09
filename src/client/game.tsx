@@ -98,6 +98,39 @@ const COMPLETION_MESSAGES = [
 
 const CONFETTI_COLORS = ['#fb923c', '#fcd34d', '#7fd4c1', '#e86ba7', '#8fa8ff', '#f6e3a8'];
 
+// The game talks a little smack — smug about itself, never cruel to the
+// player. Lines rotate so the voice doesn't wear out.
+function pick(lines: string[]): string {
+  return lines[Math.floor(Math.random() * lines.length)]!;
+}
+
+const triesWord = (t: number) => `${t} ${t === 1 ? 'try' : 'tries'} left`;
+
+const WRONG_LINES = (t: number) => [
+  `✗ Think again — ${triesWord(t)}`,
+  `✗ The picture says no. ${triesWord(t)}`,
+  `✗ Bold. Wrong, but bold — ${triesWord(t)}`,
+  `✗ That piece lives somewhere else. ${triesWord(t)}`,
+];
+
+const NEAR_MISS_LINES = (t: number) => [
+  `✗ Almost doesn't count — right corner though. ${triesWord(t)}`,
+  `✗ So close the canvas flinched. ${triesWord(t)}`,
+  `✗ Right neighborhood, wrong house — ${triesWord(t)}`,
+];
+
+const LOCKOUT_LINES = [
+  "✗ That's three. The picture remembers. Tomorrow.",
+  '✗ Out of tries — the canvas wins this round. See you tomorrow.',
+  '✗ Done for today. The grid will still be smug tomorrow.',
+];
+
+const TAKEN_LINES = [
+  'Sniped — someone beat you to that cell.',
+  "Too slow. That cell's taken.",
+  'Great minds — but theirs was faster.',
+];
+
 type ConfettiPiece = {
   left: number;
   size: number;
@@ -324,7 +357,7 @@ const App = () => {
             'success'
           );
         } else if (data.alreadyFilled) {
-          notify('Someone got there first!', 'info');
+          notify(pick(TAKEN_LINES), 'info');
         } else {
           runRef.current = 0;
           // Pulse the piece back in the tray so it's obvious it returned.
@@ -334,10 +367,10 @@ const App = () => {
           const t = data.triesLeft;
           notify(
             t === 0
-              ? '✗ No tries left — see you tomorrow!'
+              ? pick(LOCKOUT_LINES)
               : data.nearMiss
-                ? `✗ So close — right corner, wrong cell. ${t} ${t === 1 ? 'try' : 'tries'} left`
-                : `✗ Not quite — ${t} ${t === 1 ? 'try' : 'tries'} left`,
+                ? pick(NEAR_MISS_LINES(t))
+                : pick(WRONG_LINES(t)),
             'error'
           );
         }
