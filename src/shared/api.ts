@@ -56,6 +56,10 @@ export type PlaceResponse = {
   /** Points awarded for this placement: 0 wrong, 1 correct, 2 correct in a no-hints day. */
   pointsEarned: number;
   usedHints: boolean;
+  /** Wrong cell, but the right quadrant of the picture — the near-miss signal. */
+  nearMiss: boolean;
+  /** The puzzle's real title, sent only when this placement completed the picture. */
+  revealedTitle?: string;
 };
 
 export type RealtimeCanvasMessage = {

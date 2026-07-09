@@ -76,7 +76,9 @@ api.get('/game-state', async (c) => {
     type: 'gameState',
     puzzle: {
       date: puzzle.date,
-      title: puzzle.title,
+      // The title is the answer to the comments guessing race — keep it
+      // secret until the community finishes the picture.
+      title: completeStr ? puzzle.title : '???',
       imageUrl: puzzle.imageUrl,
       gridSize: puzzle.gridSize,
     },
@@ -183,6 +185,7 @@ api.post('/place', async (c) => {
       completed: !!(await redis.get(K.complete(today))),
       pointsEarned: 0,
       usedHints,
+      nearMiss: false,
     });
   }
 
@@ -207,6 +210,24 @@ api.post('/place', async (c) => {
     let newScore = await redis.incrBy(K.score(today, username), pointsEarned);
     await redis.zAdd(K.lb(today), { score: newScore, member: username });
     await updateStreak(username, today);
+
+    // Streaks become identity: from 3 days on, the player's flair in this
+    // subreddit shows it. Best effort — never let flair break a placement.
+    try {
+      const streakStr = await redis.get(K.streak(username));
+      const streakCount: number = streakStr ? JSON.parse(streakStr).count : 0;
+      if (streakCount >= 3 && context.subredditName) {
+        await reddit.setUserFlair({
+          subredditName: context.subredditName,
+          username,
+          text: `🧩 ${streakCount}-day streak`,
+          backgroundColor: '#1a1e3c',
+          textColor: 'light',
+        });
+      }
+    } catch {
+      // Flair needs mod permission in the installed subreddit; skip quietly.
+    }
 
     const filledCount = await redis.hLen(K.canvas(today));
     const completed = filledCount >= totalCells;
@@ -246,6 +267,8 @@ api.post('/place', async (c) => {
       completed,
       pointsEarned,
       usedHints,
+      nearMiss: false,
+      ...(completed ? { revealedTitle: puzzle.title } : {}),
     });
   } else {
     const newTries = isPlaytest()
@@ -265,6 +288,8 @@ api.post('/place', async (c) => {
       completed: !!(await redis.get(K.complete(today))),
       pointsEarned: 0,
       usedHints,
+      // Right quadrant, wrong cell — the almost-had-it signal.
+      nearMiss: getZone(pieceId, gridSize) === getZone(cellIndex, gridSize),
     });
   }
 });
@@ -280,17 +305,22 @@ api.post('/share', async (c) => {
   const puzzle = getPuzzleForDate(today);
   const totalCells = puzzle.gridSize * puzzle.gridSize;
 
-  const [scoreStr, streakStr, filledCount, completeStr] = await Promise.all([
+  const [scoreStr, streakStr, filledCount, completeStr, triesStr, handStr] = await Promise.all([
     redis.get(K.score(today, username)),
     redis.get(K.streak(username)),
     redis.hLen(K.canvas(today)),
     redis.get(K.complete(today)),
+    redis.get(K.tries(today, username)),
+    redis.get(K.hand(today, username)),
   ]);
   const score = scoreStr !== undefined ? parseInt(scoreStr) : 0;
   const streakData: { count: number } = streakStr ? JSON.parse(streakStr) : { count: 0 };
   const pct = Math.round((filledCount / totalCells) * 100);
+  const handEmpty = handStr ? (JSON.parse(handStr) as number[]).length === 0 : false;
+  const perfectDay = handEmpty && (triesStr === undefined || parseInt(triesStr) >= 3) && score > 0;
 
   const parts = [`🧩 ${score} pts on today's Big Picture`];
+  if (perfectDay) parts.push('a perfect day — every piece, zero misses');
   if (streakData.count > 1) parts.push(`${streakData.count}-day streak`);
   parts.push(completeStr ? 'we finished the picture!' : `canvas ${pct}% complete`);
   const text = `${parts.join(' · ')} — come place your pieces`;

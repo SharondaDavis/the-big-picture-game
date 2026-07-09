@@ -139,6 +139,8 @@ const App = () => {
   const [suggestBusy, setSuggestBusy] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const prevCompletedRef = useRef<boolean | null>(null);
+  // Consecutive correct placements this session — fuels the run call-outs.
+  const runRef = useRef(0);
   const notifTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragOriginRef = useRef<DragPos | null>(null);
   const returnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -315,15 +317,16 @@ const App = () => {
         setTimeout(() => setFlash(null), 700);
 
         if (data.correct) {
+          runRef.current += 1;
+          const base = data.pointsEarned >= 2 ? '✓ It sticks! +2 pts — no-hints bonus' : '✓ It sticks! +1 pt';
           notify(
-            data.pointsEarned >= 2
-              ? '✓ It sticks! +2 pts — no-hints bonus!'
-              : '✓ It sticks! +1 pt. Keep going.',
+            runRef.current >= 2 ? `${base} · ${runRef.current} in a row!` : `${base}. Keep going.`,
             'success'
           );
         } else if (data.alreadyFilled) {
           notify('Someone got there first!', 'info');
         } else {
+          runRef.current = 0;
           // Pulse the piece back in the tray so it's obvious it returned.
           setReturnedPieceId(pieceId);
           if (returnedPieceTimerRef.current) clearTimeout(returnedPieceTimerRef.current);
@@ -332,7 +335,9 @@ const App = () => {
           notify(
             t === 0
               ? '✗ No tries left — see you tomorrow!'
-              : `✗ Not quite — ${t} ${t === 1 ? 'try' : 'tries'} left`,
+              : data.nearMiss
+                ? `✗ So close — right corner, wrong cell. ${t} ${t === 1 ? 'try' : 'tries'} left`
+                : `✗ Not quite — ${t} ${t === 1 ? 'try' : 'tries'} left`,
             'error'
           );
         }
@@ -348,6 +353,9 @@ const App = () => {
             locked: data.triesLeft <= 0,
             completed: data.completed,
             usedHints: data.usedHints,
+            puzzle: data.revealedTitle
+              ? { ...prev.puzzle, title: data.revealedTitle }
+              : prev.puzzle,
           };
         });
       } finally {
@@ -485,6 +493,7 @@ const App = () => {
     setDragPieceId(null);
     setDragOverCell(null);
     setFlash(null);
+    runRef.current = 0;
     await fetch('/api/debug/reset-day', { method: 'POST' });
     const res = await fetch('/api/game-state');
     const data: GameStateResponse = await res.json();
@@ -521,6 +530,7 @@ const App = () => {
   const activePiece = draggedPiece ?? selectedPiece;
   const myRank = leaderboard.findIndex((e) => e.username === state.username);
   const dayDone = locked || hand.length === 0 || completed;
+  const perfectDay = hand.length === 0 && triesLeft >= 3 && score > 0;
   const dayNumber = Math.floor(Date.parse(`${puzzle.date}T00:00:00Z`) / 86_400_000);
   const completionMessage = COMPLETION_MESSAGES[dayNumber % COMPLETION_MESSAGES.length]!;
 
@@ -612,6 +622,9 @@ const App = () => {
           <div className="text-[10px] uppercase tracking-[0.35em] bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent font-bold">
             Picture complete
           </div>
+          {title !== '???' && (
+            <div className="text-white/80 text-sm font-bold mt-0.5">“{title}”</div>
+          )}
           <div className="text-white/45 text-xs mt-1">
             {state.contributors > 1
               ? `${state.contributors} Redditors built today's picture — +3 to every contributor`
@@ -637,6 +650,11 @@ const App = () => {
       {completed && (
         <div className="mx-4 mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
           <div className="flex items-center justify-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-white/45 tabular-nums">
+            {perfectDay && (
+              <span className="text-[10px] font-bold tracking-wide bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+                PERFECT DAY
+              </span>
+            )}
             <span className="text-orange-300 font-medium">{score} pts</span>
             {myRank >= 0 && <span>rank #{myRank + 1}</span>}
             {streak > 0 && <span>{streak}d streak</span>}
@@ -668,6 +686,11 @@ const App = () => {
           </div>
           <div className="text-sm font-bold text-white/85 mb-3">
             {locked ? 'Out of tries' : 'Your part is done'}
+            {perfectDay && (
+              <span className="block text-[10px] font-bold tracking-[0.2em] mt-1 bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
+                PERFECT DAY · 5 FOR 5
+              </span>
+            )}
           </div>
           <div className="flex justify-center gap-6 mb-3 tabular-nums">
             <div>
@@ -1084,6 +1107,11 @@ const App = () => {
             />
           </div>
           <div className="celebrate-text text-center mt-5">
+            {title !== '???' && (
+              <div className="text-[10px] uppercase tracking-[0.3em] text-white/50 mb-1">
+                “{title}”
+              </div>
+            )}
             <div className="text-lg font-bold bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent">
               {completionMessage}
             </div>
