@@ -540,7 +540,9 @@ const App = () => {
   return (
     <div className="flex flex-col min-h-screen app-bg text-white select-none">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-10 bg-[#0b0b18]/80 backdrop-blur-md border-b border-white/[0.06]">
+      {/* No backdrop-blur here: live blur under a sticky header re-composites
+          every frame on mobile GPUs and makes dragging feel laggy. */}
+      <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-10 bg-[#0d0d1c]/95 border-b border-white/[0.06]">
         <div className="leading-tight">
           <div className="font-black text-sm tracking-tight bg-gradient-to-r from-orange-400 to-amber-300 bg-clip-text text-transparent uppercase">
             The Big Picture
@@ -592,12 +594,12 @@ const App = () => {
       {/* Floating toast */}
       {notif && (
         <div
-          className={`toast-in fixed top-14 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full text-xs font-medium border backdrop-blur-md whitespace-nowrap ${
+          className={`toast-in fixed top-14 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full text-xs font-medium border bg-[#0d0d1c]/95 whitespace-nowrap ${
             notif.kind === 'success'
-              ? 'border-emerald-400/30 bg-emerald-500/[0.12] text-emerald-300'
+              ? 'border-emerald-400/30 text-emerald-300'
               : notif.kind === 'error'
-                ? 'border-red-400/30 bg-red-500/[0.12] text-red-300'
-                : 'border-white/[0.12] bg-white/[0.06] text-white/70'
+                ? 'border-red-400/30 text-red-300'
+                : 'border-white/[0.12] text-white/70'
           }`}
         >
           {notif.text}
@@ -793,7 +795,7 @@ const App = () => {
                   key={i}
                   data-cell-index={i}
                   onClick={() => handleCellTap(i)}
-                  className={`transition-all duration-150 relative ${
+                  className={`transition-colors duration-150 relative ${
                     isFlashing
                       ? flash?.kind === 'wrong'
                         ? 'bg-red-500/50 cell-shake'
@@ -909,7 +911,7 @@ const App = () => {
                 onPointerMove={handlePieceMove}
                 onPointerUp={handlePieceRelease}
                 onPointerCancel={handlePieceCancel}
-                className={`relative rounded-lg border-2 transition-all duration-150 overflow-hidden touch-none ${
+                className={`relative rounded-lg border-2 transition-[transform,opacity,border-color] duration-150 overflow-hidden touch-none ${
                   isDragging || isPending
                     ? 'border-orange-400/40 opacity-30'
                     : isSelected
@@ -1050,7 +1052,7 @@ const App = () => {
           positive send-off. Fires only when completion happens live. */}
       {celebration && (
         <div
-          className="celebrate-overlay fixed inset-0 z-40 bg-[#06060f]/92 backdrop-blur-sm flex flex-col items-center justify-center px-8 overflow-hidden"
+          className="celebrate-overlay fixed inset-0 z-40 bg-[#06060f]/[0.97] flex flex-col items-center justify-center px-8 overflow-hidden"
           onClick={() => setCelebration(null)}
         >
           {celebration.map((c, i) => (
