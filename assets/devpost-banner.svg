@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <radialGradient id="bg" cx="68%" cy="38%" r="80%">
+      <stop offset="0%" stop-color="#191f3d"/>
+      <stop offset="55%" stop-color="#0e1128"/>
+      <stop offset="100%" stop-color="#070812"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd66b" stop-opacity="0.5"/>
+      <stop offset="45%" stop-color="#fb923c" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#fcd34d"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b3157"/>
+      <stop offset="100%" stop-color="#1a1e3c"/>
+    </linearGradient>
+    <linearGradient id="snap" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff8a3c"/>
+      <stop offset="100%" stop-color="#e2574c"/>
+    </linearGradient>
+    <linearGradient id="trail2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd66b" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffd66b" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="glo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="sglo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <circle cx="840" cy="380" r="380" fill="url(#warm)"/>
+
+  <!-- Ambient sparks -->
+  <g fill="#ffd66b" filter="url(#sglo)">
+    <circle cx="120" cy="120" r="4"/><circle cx="1090" cy="150" r="5"/><circle cx="1130" cy="640" r="4"/>
+    <circle cx="560" cy="700" r="4"/><circle cx="660" cy="90" r="3.4"/>
+  </g>
+  <g fill="#7fe0ff" filter="url(#sglo)">
+    <circle cx="60" cy="560" r="3.6"/><circle cx="1160" cy="380" r="4"/><circle cx="700" cy="740" r="3.4"/>
+  </g>
+
+  <!-- ====== Left: type stack ====== -->
+  <text x="84" y="240" font-family="Helvetica Neue, Arial, sans-serif" font-size="23" font-weight="700" letter-spacing="7" fill="#fcd34d">DAILY COMMUNAL PUZZLE</text>
+  <text x="80" y="342" font-family="Helvetica Neue, Arial, sans-serif" font-size="104" font-weight="900" fill="#f5f6fa">The Big</text>
+  <text x="80" y="452" font-family="Helvetica Neue, Arial, sans-serif" font-size="104" font-weight="900" fill="url(#gold)">Picture</text>
+
+  <text x="84" y="530" font-family="Helvetica Neue, Arial, sans-serif" font-size="30" fill="#b9bdd1">One picture. The whole community.</text>
+  <text x="84" y="572" font-family="Helvetica Neue, Arial, sans-serif" font-size="30" fill="#b9bdd1">Three wrong tries a day.</text>
+
+  <rect x="84" y="626" width="5" height="54" rx="2.5" fill="#fcd34d"/>
+  <text x="106" y="648" font-family="Helvetica Neue, Arial, sans-serif" font-size="21" font-weight="700" fill="#d8dbe6">A Reddit game</text>
+  <text x="106" y="676" font-family="Helvetica Neue, Arial, sans-serif" font-size="21" fill="#7c819c">Built on Devvit</text>
+
+  <!-- ====== Right: electrified board ====== -->
+  <g transform="translate(880 390) rotate(-4) scale(0.92)">
+    <rect x="-240" y="-240" width="480" height="480" rx="36" fill="url(#frame)" stroke="#3a4270" stroke-width="5"/>
+    <rect x="-222" y="-222" width="444" height="444" rx="24" fill="#0d1026"/>
+
+    <!-- 3x3, 140px cells at -216..216 with gutters -->
+    <g>
+      <rect x="-216" y="-216" width="138" height="138" rx="14" fill="#33406e"/>
+      <circle cx="-147" cy="-147" r="40" fill="#ffd66b"/>
+      <circle cx="-161" cy="-161" r="10" fill="#ffe9a8"/>
+    </g>
+    <g>
+      <rect x="-70" y="-216" width="138" height="138" rx="14" fill="#2c3862"/>
+      <path d="M-50 -98 L-14 -156 L14 -118 L34 -144 L50 -98 Z" fill="#7fd4c1"/>
+      <circle cx="30" cy="-182" r="11" fill="#e8f4ff"/>
+    </g>
+    <g>
+      <rect x="76" y="-216" width="138" height="138" rx="14" fill="#33406e"/>
+      <path d="M90 -118 Q 110 -146 130 -118 T 170 -118 T 210 -118 L 210 -92 L 90 -92 Z" fill="#4a7fe8"/>
+    </g>
+    <g>
+      <rect x="-216" y="-70" width="138" height="138" rx="14" fill="#2c3862"/>
+      <path d="M-147 -50 L-117 -2 L-147 22 L-177 -2 Z" fill="#e86ba7"/>
+    </g>
+    <g>
+      <rect x="-70" y="-70" width="138" height="138" rx="14" fill="#e2574c"/>
+      <path d="M0 -46 L32 6 L13 6 L13 44 L-13 44 L-13 6 L-32 6 Z" fill="#ffd66b"/>
+    </g>
+    <g>
+      <rect x="76" y="-70" width="138" height="138" rx="14" fill="#33406e"/>
+      <path d="M98 44 L120 -14 L142 22 L164 -34 L192 44 Z" fill="#2e9f5e"/>
+    </g>
+    <g>
+      <rect x="-216" y="76" width="138" height="138" rx="14" fill="#2e9f5e"/>
+      <path d="M-216 158 Q -182 122 -147 158 T -78 158 L -78 214 L -216 214 Z" fill="#25814c"/>
+    </g>
+    <g>
+      <rect x="-70" y="76" width="138" height="138" rx="14" fill="#4a7fe8"/>
+      <path d="M-42 172 L0 100 L42 172 Z" fill="#e8f4ff"/>
+    </g>
+    <!-- The waiting slot -->
+    <rect x="76" y="76" width="138" height="138" rx="14" fill="#0a0c1e" stroke="#ffd66b" stroke-width="4" stroke-dasharray="14 10" filter="url(#sglo)"/>
+    <rect x="76" y="76" width="138" height="138" rx="14" fill="#ffd66b" opacity="0.1"/>
+  </g>
+
+  <!-- The final piece, flying in -->
+  <path d="M1176 60 L1022 218 L1102 244 Z" fill="url(#trail2)" opacity="0.55"/>
+  <path d="M1198 118 L1046 252 L1108 276 Z" fill="url(#trail2)" opacity="0.38"/>
+  <g transform="translate(1030 268) rotate(14)" filter="url(#glo)">
+    <rect x="-72" y="-72" width="144" height="144" rx="14" fill="url(#snap)" stroke="#ffe9a8" stroke-width="5"/>
+    <circle cx="0" cy="-12" r="32" fill="#ffd66b"/>
+    <circle cx="-11" cy="-18" r="4.4" fill="#b4571e"/>
+    <circle cx="11" cy="-18" r="4.4" fill="#b4571e"/>
+    <path d="M-28 30 Q 0 58 28 30" stroke="#ffe9a8" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Lightning -->
+  <g fill="#7fe0ff" filter="url(#glo)">
+    <path d="M948 170 L918 226 L944 223 L904 284 L960 224 L932 227 Z"/>
+    <path d="M1120 400 L1099 436 L1116 434 L1090 477 L1128 436 L1110 438 Z" opacity="0.9"/>
+  </g>
+  <g fill="#ffd66b" filter="url(#glo)">
+    <path d="M760 430 L744 459 L757 457 L737 492 L767 459 L753 461 Z" opacity="0.9"/>
+  </g>
+
+  <!-- Impact sparks near the slot -->
+  <g stroke="#ffe9a8" stroke-width="4.4" stroke-linecap="round" filter="url(#sglo)">
+    <line x1="980" y1="500" x2="997" y2="483"/>
+    <line x1="1003" y1="530" x2="1026" y2="524"/>
+    <line x1="966" y1="541" x2="980" y2="558"/>
+  </g>
+</svg>
