@@ -161,7 +161,9 @@ const App = () => {
   const [dragOverCell, setDragOverCell] = useState<number | null>(null);
   const [pending, setPending] = useState<PendingPlacement>(null);
   const [returnedPieceId, setReturnedPieceId] = useState<number | null>(null);
-  const [hintsOn, setHintsOn] = useState(true);
+  // Hints are opt-in: the default experience is the full-score hard mode.
+  const [hintsOn, setHintsOn] = useState(false);
+  const [lbTab, setLbTab] = useState<'today' | 'alltime'>('today');
   const [viewportW, setViewportW] = useState(() => window.innerWidth);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [celebration, setCelebration] = useState<ConfettiPiece[] | null>(null);
@@ -594,7 +596,11 @@ const App = () => {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setHintsOn((v) => !v)}
+            onClick={() => {
+              const next = !hintsOn;
+              setHintsOn(next);
+              if (next) notify('Hints on — hinted placements earn 1 pt instead of 2', 'info');
+            }}
             className={`text-[10px] font-medium tracking-wide px-2.5 py-1 rounded-full border transition-colors ${
               hintsOn
                 ? 'border-orange-400/40 text-orange-300 bg-orange-400/[0.08]'
@@ -1041,17 +1047,38 @@ const App = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] text-white/40 uppercase tracking-[0.2em] font-medium">
-                Today's leaders
-              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setLbTab('today')}
+                  className={`text-[10px] uppercase tracking-[0.15em] font-medium px-2.5 py-1 rounded-full transition-colors ${
+                    lbTab === 'today'
+                      ? 'bg-orange-400/[0.12] text-orange-300 border border-orange-400/40'
+                      : 'text-white/40 border border-transparent'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => setLbTab('alltime')}
+                  className={`text-[10px] uppercase tracking-[0.15em] font-medium px-2.5 py-1 rounded-full transition-colors ${
+                    lbTab === 'alltime'
+                      ? 'bg-orange-400/[0.12] text-orange-300 border border-orange-400/40'
+                      : 'text-white/40 border border-transparent'
+                  }`}
+                >
+                  All-time
+                </button>
+              </div>
               <button onClick={() => setShowLb(false)} className="text-white/40 text-lg leading-none">
                 ×
               </button>
             </div>
-            {leaderboard.length === 0 && (
-              <p className="text-white/40 text-sm text-center py-4">No placements yet — be first!</p>
+            {(lbTab === 'today' ? leaderboard : state.leaderboardAllTime).length === 0 && (
+              <p className="text-white/40 text-sm text-center py-4">
+                {lbTab === 'today' ? 'No placements yet — be first!' : 'No lifetime points yet.'}
+              </p>
             )}
-            {leaderboard.map((entry, i) => (
+            {(lbTab === 'today' ? leaderboard : state.leaderboardAllTime).map((entry, i) => (
               <div
                 key={entry.username}
                 className={`flex items-center justify-between py-2 border-b border-white/5 ${
@@ -1198,8 +1225,8 @@ const App = () => {
                   3
                 </span>
                 <span>
-                  Wrong spot costs a try — you get 3 a day and 5 pieces. Nobody can finish
-                  alone, so every piece counts.
+                  Wrong spot costs a try — you get 3 a day and 5 pieces. Need help? Hints in
+                  the header show each piece's corner, but hinted placements score half.
                 </span>
               </div>
             </div>

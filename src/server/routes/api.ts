@@ -17,6 +17,7 @@ import {
   reconcileHand,
   dealPieces,
   getLeaderboard,
+  getAllTimeLeaderboard,
   updateStreak,
   seedCanvas,
   isPlaytest,
@@ -53,6 +54,7 @@ api.get('/game-state', async (c) => {
     completeStr,
     usedHintsStr,
     contributors,
+    leaderboardAllTime,
   ] = await Promise.all([
     getCanvas(today),
     getUserHand(today, username, puzzle.gridSize),
@@ -63,6 +65,7 @@ api.get('/game-state', async (c) => {
     redis.get(K.complete(today)),
     redis.get(K.usedHints(today, username)),
     redis.zCard(K.lb(today)),
+    getAllTimeLeaderboard(),
   ]);
 
   const rawTriesLeft = triesStr !== undefined ? parseInt(triesStr) : 3;
@@ -89,6 +92,7 @@ api.get('/game-state', async (c) => {
     streak: streakData.count,
     locked: triesLeft <= 0,
     leaderboard,
+    leaderboardAllTime,
     completed: !!completeStr,
     username,
     usedHints: usedHintsStr === '1',
@@ -112,6 +116,7 @@ api.post('/debug/reset-day', async (c) => {
     K.canvas(today),
     K.complete(today),
     K.lb(today),
+    K.lbAll(),
     K.hand(today, username),
     K.tries(today, username),
     K.score(today, username),
@@ -209,6 +214,7 @@ api.post('/place', async (c) => {
     const pointsEarned = usedHints ? 1 : 2;
     let newScore = await redis.incrBy(K.score(today, username), pointsEarned);
     await redis.zAdd(K.lb(today), { score: newScore, member: username });
+    await redis.zIncrBy(K.lbAll(), username, pointsEarned);
     await updateStreak(username, today);
 
     // Streaks become identity: from 3 days on, the player's flair in this
@@ -240,6 +246,7 @@ api.post('/place', async (c) => {
         const contributors = await redis.zRange(K.lb(today), 0, -1, { by: 'rank' });
         for (const entry of contributors) {
           await redis.zIncrBy(K.lb(today), entry.member, 3);
+          await redis.zIncrBy(K.lbAll(), entry.member, 3);
           await redis.incrBy(K.score(today, entry.member), 3);
         }
         newScore += 3;

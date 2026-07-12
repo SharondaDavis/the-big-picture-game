@@ -12,11 +12,11 @@ I kept coming back to one question while brainstorming: what actually pulls some
 
 ## What it does
 
-Each day the subreddit gets a shared image and an empty grid. Every player is dealt five puzzle pieces with a corner-arrow zone hint for where each belongs — or turn hints off and every correct placement is worth double. Tap a piece, then tap the cell you think it goes in (drag works too). Correct placements lock into a canvas that everyone sees fill in live. Wrong ones cost one of your three daily tries — though a miss in the right corner tells you so: "almost doesn't count."
+Each day the subreddit gets a shared image and an empty grid. Every player is dealt five puzzle pieces. The game starts hint-free at full score; opt into corner-arrow hints and it warns you that hinted placements score half. Tap a piece, then tap the cell you think it goes in (drag works too). Correct placements lock into a canvas that everyone sees fill in live. Wrong ones cost one of your three daily tries — though a miss in the right corner tells you so: "almost doesn't count."
 
 Because the day's title is hidden until the canvas completes, the comment section becomes a second game: as the image resolves, players race to call what it is. When the last piece locks, the picture takes over the screen with the title reveal, a contributor count, and +3 bonus points paid to everyone who placed a piece.
 
-The comeback loop is layered: streaks become your community flair from day three ("🧩 5-day streak" on every comment you write), a live top-3 strip and daily leaderboard reward the sharpest solvers, placing all five pieces without a miss earns a Perfect Day, and running out of pieces flips the screen to a summary with a countdown to the next picture. One tap shares your run to the comments. And because the pictures riff on what's happening in the world — an eclipse, aurora season, the World Cup final — finishing the day's puzzle feels like watching the week develop one tile at a time.
+The comeback loop is layered: streaks become your community flair from day three ("🧩 5-day streak" on every comment you write), a live top-3 strip plus daily and all-time leaderboards reward the sharpest solvers, placing all five pieces without a miss earns a Perfect Day, and running out of pieces flips the screen to a summary with a countdown to the next picture. One tap shares your run to the comments. And because the pictures riff on what's happening in the world — an eclipse, aurora season, the World Cup final — finishing the day's puzzle feels like watching the week develop one tile at a time.
 
 ## How I built it
 

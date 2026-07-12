@@ -64,6 +64,8 @@ export const K = {
   usedHints: (d: string, u: string) => `tbp:${d}:usedhints:${u}`,
   // Community picture ideas, scored by submission timestamp.
   suggestions: () => 'tbp:suggestions',
+  // Lifetime points across all days — the all-time leaderboard.
+  lbAll: () => 'tbp:lb:alltime',
 };
 
 export function getZone(cellIndex: number, gridSize: number): ZoneHint {
@@ -150,8 +152,16 @@ export async function getUserHand(
 export async function getLeaderboard(
   date: string
 ): Promise<Array<{ username: string; score: number }>> {
+  return topOfBoard(K.lb(date));
+}
+
+export async function getAllTimeLeaderboard(): Promise<Array<{ username: string; score: number }>> {
+  return topOfBoard(K.lbAll());
+}
+
+async function topOfBoard(key: string): Promise<Array<{ username: string; score: number }>> {
   try {
-    const entries = await redis.zRange(K.lb(date), '+inf', '-inf', {
+    const entries = await redis.zRange(key, '+inf', '-inf', {
       by: 'score',
       reverse: true,
       limit: { offset: 0, count: 10 },

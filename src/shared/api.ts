@@ -27,6 +27,8 @@ export type GameStateResponse = {
   streak: number;
   locked: boolean;
   leaderboard: LeaderboardEntry[];
+  /** Lifetime points, all days combined. */
+  leaderboardAllTime: LeaderboardEntry[];
   completed: boolean;
   username: string;
   /** True once any placement today was made with hints on — kills the 2x bonus for the day. */

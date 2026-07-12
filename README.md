@@ -20,7 +20,7 @@ Placements aren't private — every correct piece locks into a canvas that **eve
 4. **Wrong** → the piece bounces back to your tray and you burn one of your three tries for the day.
 5. Five pieces is your whole hand for the day — no refills — so no single player can finish the picture alone. When your pieces are placed (or your tries are gone), you're done until the next daily. Finishing the canvas pays **+3 bonus points to every contributor**, and you can share your run to the comments or suggest a picture for a future puzzle while you wait.
 
-**Hints and scoring:** each piece carries a zone hint — a corner arrow (↖ ↗ ↙ ↘) showing which quadrant of the image it belongs in. Hints can be toggled off for a harder game: correct placements are worth **1 point with hints, 2 points if you play the whole day without them**. Making any placement with hints visible forfeits the bonus for the rest of that day.
+**Hints and scoring:** the game starts hint-free at full score. Need help? Toggle hints on in the header for a corner arrow (↖ ↗ ↙ ↘) showing which quadrant each piece belongs in — but correct placements are worth **1 point with hints versus 2 without**, and making any placement with hints visible forfeits the double rate for the rest of that day.
 
 ## Play it
 
