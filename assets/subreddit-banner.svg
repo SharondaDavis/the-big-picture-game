@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 384" width="1920" height="384">
+  <defs>
+    <radialGradient id="bg" cx="62%" cy="45%" r="75%">
+      <stop offset="0%" stop-color="#181d3a"/>
+      <stop offset="55%" stop-color="#0e1128"/>
+      <stop offset="100%" stop-color="#070812"/>
+    </radialGradient>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd66b" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#fb923c" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#fb923c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#fcd34d"/>
+    </linearGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2b3157"/>
+      <stop offset="100%" stop-color="#1a1e3c"/>
+    </linearGradient>
+    <linearGradient id="snap" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff8a3c"/>
+      <stop offset="100%" stop-color="#e2574c"/>
+    </linearGradient>
+    <linearGradient id="trail2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd66b" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffd66b" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="glo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="sglo" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="384" fill="url(#bg)"/>
+  <ellipse cx="1200" cy="192" rx="620" ry="300" fill="url(#warm)"/>
+
+  <!-- Ambient sparks scattered along the strip -->
+  <g fill="#ffd66b" filter="url(#sglo)">
+    <circle cx="120" cy="80" r="3.4"/><circle cx="420" cy="310" r="3"/><circle cx="1700" cy="90" r="3.6"/>
+    <circle cx="1850" cy="290" r="3"/><circle cx="700" cy="60" r="2.6"/><circle cx="960" cy="330" r="3"/>
+  </g>
+  <g fill="#7fe0ff" filter="url(#sglo)">
+    <circle cx="260" cy="200" r="2.8"/><circle cx="1500" cy="330" r="3"/><circle cx="1790" cy="180" r="2.6"/>
+    <circle cx="560" cy="150" r="2.4"/>
+  </g>
+
+  <!-- Wordmark, left -->
+  <text x="96" y="150" font-family="Helvetica Neue, Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="6" fill="#fcd34d">DAILY COMMUNAL PUZZLE</text>
+  <text x="94" y="222" font-family="Helvetica Neue, Arial, sans-serif" font-size="64" font-weight="900" fill="#f5f6fa">The Big <tspan fill="url(#gold)">Picture</tspan></text>
+  <text x="96" y="268" font-family="Helvetica Neue, Arial, sans-serif" font-size="21" fill="#b9bdd1">One picture. The whole community. Three wrong tries a day.</text>
+
+  <!-- Mini board, centre-right -->
+  <g transform="translate(1150 192) rotate(-4) scale(0.62)">
+    <rect x="-240" y="-240" width="480" height="480" rx="36" fill="url(#frame)" stroke="#3a4270" stroke-width="5"/>
+    <rect x="-222" y="-222" width="444" height="444" rx="24" fill="#0d1026"/>
+    <g>
+      <rect x="-216" y="-216" width="138" height="138" rx="14" fill="#33406e"/>
+      <circle cx="-147" cy="-147" r="40" fill="#ffd66b"/>
+    </g>
+    <g>
+      <rect x="-70" y="-216" width="138" height="138" rx="14" fill="#2c3862"/>
+      <path d="M-50 -98 L-14 -156 L14 -118 L34 -144 L50 -98 Z" fill="#7fd4c1"/>
+    </g>
+    <g>
+      <rect x="76" y="-216" width="138" height="138" rx="14" fill="#33406e"/>
+      <path d="M90 -118 Q 110 -146 130 -118 T 170 -118 T 210 -118 L 210 -92 L 90 -92 Z" fill="#4a7fe8"/>
+    </g>
+    <g>
+      <rect x="-216" y="-70" width="138" height="138" rx="14" fill="#2c3862"/>
+      <path d="M-147 -50 L-117 -2 L-147 22 L-177 -2 Z" fill="#e86ba7"/>
+    </g>
+    <g>
+      <rect x="-70" y="-70" width="138" height="138" rx="14" fill="#e2574c"/>
+      <path d="M0 -46 L32 6 L13 6 L13 44 L-13 44 L-13 6 L-32 6 Z" fill="#ffd66b"/>
+    </g>
+    <g>
+      <rect x="76" y="-70" width="138" height="138" rx="14" fill="#33406e"/>
+      <path d="M98 44 L120 -14 L142 22 L164 -34 L192 44 Z" fill="#2e9f5e"/>
+    </g>
+    <g>
+      <rect x="-216" y="76" width="138" height="138" rx="14" fill="#2e9f5e"/>
+      <path d="M-216 158 Q -182 122 -147 158 T -78 158 L -78 214 L -216 214 Z" fill="#25814c"/>
+    </g>
+    <g>
+      <rect x="-70" y="76" width="138" height="138" rx="14" fill="#4a7fe8"/>
+      <path d="M-42 172 L0 100 L42 172 Z" fill="#e8f4ff"/>
+    </g>
+    <rect x="76" y="76" width="138" height="138" rx="14" fill="#0a0c1e" stroke="#ffd66b" stroke-width="4" stroke-dasharray="14 10" filter="url(#sglo)"/>
+    <rect x="76" y="76" width="138" height="138" rx="14" fill="#ffd66b" opacity="0.1"/>
+  </g>
+
+  <!-- Flying piece with trail, heading for the slot -->
+  <path d="M1480 30 L1330 160 L1396 182 Z" fill="url(#trail2)" opacity="0.55"/>
+  <path d="M1512 74 L1372 190 L1424 208 Z" fill="url(#trail2)" opacity="0.38"/>
+  <g transform="translate(1345 196) rotate(14) scale(0.62)" filter="url(#glo)">
+    <rect x="-72" y="-72" width="144" height="144" rx="14" fill="url(#snap)" stroke="#ffe9a8" stroke-width="5"/>
+    <circle cx="0" cy="-12" r="32" fill="#ffd66b"/>
+    <circle cx="-11" cy="-18" r="4.4" fill="#b4571e"/>
+    <circle cx="11" cy="-18" r="4.4" fill="#b4571e"/>
+    <path d="M-28 30 Q 0 58 28 30" stroke="#ffe9a8" stroke-width="8" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Lightning accents -->
+  <g fill="#7fe0ff" filter="url(#glo)">
+    <path d="M1040 90 L1018 130 L1036 128 L1008 172 L1048 128 L1028 130 Z"/>
+    <path d="M1560 240 L1544 268 L1557 266 L1537 300 L1566 268 L1552 270 Z" opacity="0.9"/>
+  </g>
+  <g fill="#ffd66b" filter="url(#glo)">
+    <path d="M900 250 L888 272 L898 270 L883 296 L906 272 L895 274 Z" opacity="0.9"/>
+  </g>
+</svg>
