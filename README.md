@@ -1,6 +1,6 @@
 # The Big Picture
 
-**One picture. The whole community. Three tries a day.**
+**One picture. The whole community. Three wrong tries a day.**
 
 A daily communal jigsaw puzzle for Reddit, built for [Reddit's Games with a Hook hackathon](https://redditgameswithhook.devpost.com/) on [Devvit Web](https://developers.reddit.com/).
 
@@ -24,7 +24,7 @@ Placements aren't private — every correct piece locks into a canvas that **eve
 
 ## Play it
 
-🔗 *Demo post link goes here once the daily puzzle is live in a subreddit.*
+The daily puzzle runs live in **[r/BigPictureGame](https://www.reddit.com/r/BigPictureGame/)** — open the latest "The Big Picture" post and your five pieces are waiting.
 
 ## How it works
 
