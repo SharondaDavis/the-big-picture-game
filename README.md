@@ -28,7 +28,7 @@ The daily puzzle runs live in **[r/BigPictureGame](https://www.reddit.com/r/BigP
 
 ## How it works
 
-- **Shared canvas, not a personal board.** The grid's fill state lives server-side in Redis, keyed per puzzle date, and is shared by every player who opens that day's post.
+- **Shared canvas, not a personal board.** The grid's fill state lives server-side in Redis, keyed per subreddit and puzzle date — every community builds its own picture, shared live by every player who opens that day's post.
 - **Real-time sync.** When a piece locks in, the server broadcasts the placement over Devvit's real-time channel so every open client updates the canvas immediately, without a refresh.
 - **Cold-start protection.** Each day seeds a handful of cells pre-filled so the canvas never opens as an empty void, and the grid size is tuned to the size of the crowd expected to play.
 - **Per-user state.** Dealt hand, tries remaining, score, and streak are tracked per player per day; the leaderboard and completion bonus are computed from everyone's contributions.
