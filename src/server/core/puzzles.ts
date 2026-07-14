@@ -51,21 +51,26 @@ export function todayDate(): string {
   return new Date().toISOString().split('T')[0]!;
 }
 
+// Every key is scoped to the installing subreddit: each community builds
+// its own canvas, streaks, and boards. Without this, two subreddits with
+// the app installed would silently share one game.
+const sub = () => context.subredditName ?? 'global';
+
 export const K = {
-  canvas: (d: string) => `tbp:${d}:canvas`,
-  hand: (d: string, u: string) => `tbp:${d}:hand:${u}`,
-  tries: (d: string, u: string) => `tbp:${d}:tries:${u}`,
-  score: (d: string, u: string) => `tbp:${d}:score:${u}`,
-  lb: (d: string) => `tbp:${d}:lb`,
-  complete: (d: string) => `tbp:${d}:complete`,
-  streak: (u: string) => `tbp:streak:${u}`,
+  canvas: (d: string) => `tbp:${sub()}:${d}:canvas`,
+  hand: (d: string, u: string) => `tbp:${sub()}:${d}:hand:${u}`,
+  tries: (d: string, u: string) => `tbp:${sub()}:${d}:tries:${u}`,
+  score: (d: string, u: string) => `tbp:${sub()}:${d}:score:${u}`,
+  lb: (d: string) => `tbp:${sub()}:${d}:lb`,
+  complete: (d: string) => `tbp:${sub()}:${d}:complete`,
+  streak: (u: string) => `tbp:${sub()}:streak:${u}`,
   // Set to '1' the first time a user places with hints visible; gates the
   // no-hints 2x scoring bonus for the rest of the day.
-  usedHints: (d: string, u: string) => `tbp:${d}:usedhints:${u}`,
+  usedHints: (d: string, u: string) => `tbp:${sub()}:${d}:usedhints:${u}`,
   // Community picture ideas, scored by submission timestamp.
-  suggestions: () => 'tbp:suggestions',
+  suggestions: () => `tbp:${sub()}:suggestions`,
   // Lifetime points across all days — the all-time leaderboard.
-  lbAll: () => 'tbp:lb:alltime',
+  lbAll: () => `tbp:${sub()}:lb:alltime`,
 };
 
 export function getZone(cellIndex: number, gridSize: number): ZoneHint {
