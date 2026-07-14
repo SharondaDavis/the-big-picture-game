@@ -15,7 +15,7 @@ Placements aren't private — every correct piece locks into a canvas that **eve
 ## How to play
 
 1. Look at the full target image shown next to the canvas.
-2. Drag one of your five pieces onto the grid cell where you think it belongs. The cell under your finger highlights before you let go.
+2. Tap one of your five pieces, then tap the grid cell where you think it belongs — or drag it there; the cell under your finger highlights before you commit.
 3. **Correct** → the piece locks into the shared canvas for everyone (it sticks!).
 4. **Wrong** → the piece bounces back to your tray and you burn one of your three tries for the day.
 5. Five pieces is your whole hand for the day — no refills — so no single player can finish the picture alone. When your pieces are placed (or your tries are gone), you're done until the next daily. Finishing the canvas pays **+3 bonus points to every contributor**, and you can share your run to the comments or suggest a picture for a future puzzle while you wait.
@@ -57,7 +57,7 @@ src/
   shared/
     api.ts          # Types shared between client and server
 public/
-  puzzle-001.svg    # Daily puzzle artwork
+  puzzle-*.svg      # The daily artwork pool (rotates by date)
 ```
 
 ## Local development
